@@ -46,14 +46,14 @@
   }
   function draw(x, y, hdg) {
     const w = cv.width = cv.clientWidth * devicePixelRatio, h = cv.height = cv.clientHeight * devicePixelRatio;
-    ctx.fillStyle = '#062a30'; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#0c1b52'; ctx.fillRect(0, 0, w, h);
     const track = points.map(p => metres(p[1], p[2]));
     const span = Math.max(40, ...track.map(([a, b]) => Math.max(Math.abs(a), Math.abs(b))), Math.abs(x), Math.abs(y)) * 1.2, k = Math.min(w, h) / 2 / span;
     const P = ([a, b]) => [w / 2 + a * k, h / 2 - b * k];
     ctx.strokeStyle = 'rgba(148,163,184,.25)'; ctx.lineWidth = 1;
     for (const r of [0.25, 0.5, 0.75, 1]) { ctx.beginPath(); ctx.arc(w / 2, h / 2, r * span * k, 0, 7); ctx.stroke(); }
     ctx.fillStyle = 'rgba(148,163,184,.8)'; ctx.font = `${12 * devicePixelRatio}px system-ui`; ctx.fillText(`${Math.round(span)} m`, w / 2 + span * k - 40 * devicePixelRatio, h / 2 - 4);
-    if (track.length > 1) { ctx.strokeStyle = '#2dd4bf'; ctx.lineWidth = 2 * devicePixelRatio; ctx.beginPath(); track.forEach((p, i) => ctx[i ? 'lineTo' : 'moveTo'](...P(p))); ctx.stroke(); }
+    if (track.length > 1) { ctx.strokeStyle = '#5b9dff'; ctx.lineWidth = 2 * devicePixelRatio; ctx.beginPath(); track.forEach((p, i) => ctx[i ? 'lineTo' : 'moveTo'](...P(p))); ctx.stroke(); }
     ctx.fillStyle = '#22c55e'; ctx.beginPath(); ctx.arc(w / 2, h / 2, 5 * devicePixelRatio, 0, 7); ctx.fill(); // home
     if (!last.lat) return;
     const [cx, cy] = P([x, y]), a = (hdg - 90) * Math.PI / 180, r = 10 * devicePixelRatio;

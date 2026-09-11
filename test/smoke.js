@@ -186,7 +186,8 @@ assert.throws(() => parse(Buffer.from('a,b\n1,2\n3,4\n5,6')), /latitude/);
   assert.match(homeHtml, /Student portal[\s\S]*href="\/login\?next=\/student"/); // student log-in card
   const toStudent = await fetch(base + '/login?next=/student', { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ email: 'student1@demo.test', password: 'Demo@1234' }) });
   assert.equal(toStudent.headers.get('location'), '/student', 'student log-in lands in the student portal');
-  for (const u of ['/vendor/three/three.module.js', '/vendor/three/three.core.js', '/static/home3d.js', '/static/drone3d.js', '/static/home.css', '/demo/field', '/static/field3d.js', '/static/media/sim-demo.jpg']) await get('', u);
+  for (const u of ['/vendor/three/three.module.js', '/vendor/three/three.core.js', '/static/home3d.js', '/static/drone3d.js', '/static/home.css', '/demo/field', '/static/field3d.js', '/static/media/sim-demo.jpg', '/static/aeron-mark.png', '/static/aeron-word.png']) await get('', u);
+  assert.match(homeHtml, /class="logo"[^>]*>\s*<img src="\/static\/aeron-mark\.png"/); // AERON logo in the header
   assert.match(homeHtml, /class="sim-demo"[\s\S]*src="\/static\/media\/sim-demo\.mp4"/); // simulator demo video
   assert.equal((await fetch(base + '/static/media/sim-demo.mp4', { headers: { range: 'bytes=0-1' } })).status, 206, 'video streams with Range requests');
   assert.equal((await post('', '/forgot', { email: 'nobody@example.com' })).status, 200);

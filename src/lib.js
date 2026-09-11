@@ -106,7 +106,7 @@ async function resetLink(req, userId, hours = 24) {
 }
 // New account created by an admin: email a set-password link when email works, otherwise show the password once.
 async function credentialsMessage(req, u, password, label) {
-  const app = process.env.APP_NAME || 'SkyDesk';
+  const app = process.env.APP_NAME || 'AERON';
   if (mailEnabled()) {
     const link = await resetLink(req, u.id, 24 * 7);
     if (await sendMail(u.email, `Your ${app} account`, `Hi ${u.name || ''},\n\nAn account has been created for you on ${app} (${label}).\nSet your password here (link valid for 7 days):\n${link}\n\nAfterwards log in at ${baseUrl(req)}/login`))

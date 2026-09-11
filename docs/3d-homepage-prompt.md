@@ -1,14 +1,14 @@
-# Build prompt — SkyDesk 3D scroll homepage
+# Build prompt — AERON 3D scroll homepage
 
 Use this prompt (with an AI builder, or as a spec for a developer) to rebuild the public homepage as a scroll-driven 3D site.
 It describes the **technique** studied on a reference drone site — a 3D drone that flies through the whole page as you scroll —
-applied to SkyDesk's own product, copy and brand. Do not reuse the reference site's text, images, logo or 3D assets.
+applied to AERON's own product, copy and brand. Do not reuse the reference site's text, images, logo or 3D assets.
 
 ---
 
 ## Prompt
 
-> Build a single-page marketing homepage for **SkyDesk**, a platform for drone Remote Pilot Training Organisations (RPTOs)
+> Build a single-page marketing homepage for **AERON**, a platform for drone Remote Pilot Training Organisations (RPTOs)
 > and their pilots. The page is server-rendered HTML (Node/Express + EJS), styled with plain CSS, with one WebGL layer made in
 > **three.js** (no React, no page builder). A procedurally modelled quadcopter lives in a fixed, full-viewport, transparent canvas
 > above the page content (pointer-events: none) and is choreographed by scroll position, so it feels like the drone is travelling

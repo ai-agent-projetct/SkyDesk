@@ -1,6 +1,6 @@
 <%- include('head', { title, extraHead: typeof extraHead !== 'undefined' ? extraHead : '', bodyClass: typeof bodyClass !== 'undefined' ? bodyClass : '' }) %>
 <header class="site-nav">
-  <a class="logo" href="/"><%= appName %><span>.</span></a>
+  <a class="logo" href="/" aria-label="<%= appName %> home"><img src="/static/aeron-mark.png" alt="" width="67" height="34"><img class="word" src="/static/aeron-word.png" alt="<%= appName %>" width="125" height="17"></a>
   <nav>
     <a class="sec" href="/#replay">3D replay</a>
     <a class="sec" href="/#rpto">For RPTOs</a>

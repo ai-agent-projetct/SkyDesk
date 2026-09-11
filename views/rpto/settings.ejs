@@ -39,7 +39,7 @@
   <h2 class="mt">Tagline & branding</h2>
   <div class="fields">
     <div class="field"><label>Tagline</label><input name="tagline" value="<%= rpto.tagline || '' %>" placeholder="e.g. DGCA-approved remote pilot training"></div>
-    <div class="field"><label>Brand colour</label><input type="color" name="brand_color" value="<%= rpto.brand_color || '#0d9488' %>" style="height:38px"></div>
+    <div class="field"><label>Brand colour</label><input type="color" name="brand_color" value="<%= rpto.brand_color || '#0d5ef1' %>" style="height:38px"></div>
     <div class="field"><label>Default RPA trainer (certificate signatory)</label><select name="default_trainer_id"><option value="">—</option>
       <% instructors.forEach(i => { %><option value="<%= i.id %>" <%= i.id === rpto.default_trainer_id ? 'selected' : '' %>><%= i.name %><%= i.signature ? '' : ' (no signature uploaded)' %></option><% }) %></select></div>
   </div>

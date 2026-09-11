@@ -32,7 +32,7 @@
       <div class="stage-copy">
         <span class="eyebrow">● 3D flight replay</span>
         <h2>Relive any flight from five camera angles.</h2>
-        <p>Upload an ArduPilot <b>.bin</b> or <b>.log</b>, a PX4 <b>.ulg</b> or a CSV export. SkyDesk rebuilds it in 3D, with graphs, flight-health checks, PID tuning hints and a printable report.</p>
+        <p>Upload an ArduPilot <b>.bin</b> or <b>.log</b>, a PX4 <b>.ulg</b> or a CSV export. AERON rebuilds it in 3D, with graphs, flight-health checks, PID tuning hints and a printable report.</p>
         <div class="chips"><span>ArduPilot (.bin / .log)</span><span>PX4 (.ulg)</span><span>CSV / DJI exports</span></div>
       </div>
       <div class="hud" aria-hidden="true">
@@ -67,7 +67,7 @@
          ['05', 'Oct', 'Bridge inspection — River span 2', 'Quad · 24 min · Thermal', 'Standby', 'wait'],
          ['07', 'Oct', 'Check ride with instructor', 'Trainer quad · 40 min · Training', 'Assigned', 'set'],
          ['09', 'Oct', 'Corridor survey — Ring road phase 3', 'VTOL · 55 min · Mapping', 'Assigned', 'set']];
-       const mix = [['Mapping', 38, '#0d9488'], ['Inspection', 27, '#14b8a6'], ['Agriculture', 21, '#f59e0b'], ['Training', 14, '#94a3b8']]; %>
+       const mix = [['Mapping', 38, '#0d5ef1'], ['Inspection', 27, '#5b9dff'], ['Agriculture', 21, '#152a97'], ['Training', 14, '#94a3b8']]; %>
     <div class="dash">
       <div class="dash-head"><div><b>Arjun N.</b><span>Remote pilot · RPC valid to Mar 2031</span></div><div class="dash-tabs"><span class="on">12 months</span><span>This year</span><span>All time</span></div></div>
       <div class="dash-kpis">
@@ -107,7 +107,7 @@
     <span class="eyebrow">● Automated compliance</span>
     <h2>Four logbooks that fill themselves.</h2>
     <p class="sub">A pilot logbook, a flight log for every drone, a battery log and a maintenance log — kept by hand, that is a stack of forms after every flight.
-      SkyDesk writes all four from the flight logs you upload and the sessions your school signs off, so nobody retypes a thing.</p>
+      AERON writes all four from the flight logs you upload and the sessions your school signs off, so nobody retypes a thing.</p>
     <div class="lb-row">
       <div class="lb-toggle" role="group" aria-label="Show logbooks kept by hand or automatically">
         <button type="button" data-lb="manual" aria-pressed="false">By hand ✕</button>
@@ -212,7 +212,7 @@
 <!-- 8. Footer with the landing pad -->
 <footer class="h-foot">
   <div class="foot-grid">
-    <div><b class="foot-logo"><%= appName %><span>.</span></b><p>Training management for drone schools, and a logbook for every pilot they train.</p></div>
+    <div><b class="foot-logo"><img src="/static/aeron-mark.png" alt=""><%= appName %></b><p class="foot-tag">Robotics &amp; Drones · Engineering intelligence in motion</p><p>Training management for drone schools, and a logbook for every pilot they train.</p></div>
     <div><h4>Portals</h4><a href="/login">Log in</a><a href="/login?next=/student">Student log in</a><a href="/register-rpto">Register an RPTO</a><a href="/register">Student / pilot sign-up</a><a href="/rptos">Find an RPTO</a></div>
     <div class="pad-wrap"><div class="pad" data-drone-at="0.5,0,0,land"><span>H</span></div></div>
   </div>

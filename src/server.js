@@ -31,7 +31,7 @@ const mins = m => `${Math.floor((m || 0) / 60)}h ${(m || 0) % 60}m`;
 app.use(async (req, res, next) => {
   const c = L.parseCookies(req.headers.cookie);
   Object.assign(res.locals, {
-    appName: process.env.APP_NAME || 'SkyDesk', path: req.path, query: req.query, money, fmtDate, mins, today: L.today(), v: ASSET_V,
+    appName: process.env.APP_NAME || 'AERON', path: req.path, query: req.query, money, fmtDate, mins, today: L.today(), v: ASSET_V,
     L: { TRAINEE_DOCS: L.TRAINEE_DOCS, TRAINEE_DOC_HELP: L.TRAINEE_DOC_HELP, docRows: L.docRows, RPTO_DOCS: L.RPTO_DOCS, RPTO_DOCS_REQUIRED: L.RPTO_DOCS_REQUIRED, MEMBER_ROLES: L.MEMBER_ROLES, ASSET_TYPES: L.ASSET_TYPES, LEAD_SOURCES: L.LEAD_SOURCES },
     flash: c.flash || null, features: { credits: T.CREDIT_PRICE > 0, partner: T.PARTNER_SHARE > 0, payments: !!L.razorpayKeyId() },
   });
@@ -78,7 +78,7 @@ app.get('/files/:name', L.need(() => true), async (req, res) => {
 
 // Installable app (PWA): manifest, service worker at root scope, offline fallback page.
 app.get('/manifest.webmanifest', (req, res) => res.type('application/manifest+json').json({
-  name: res.locals.appName, short_name: res.locals.appName, start_url: '/login', display: 'standalone', background_color: '#062a30', theme_color: '#0d9488',
+  name: res.locals.appName, short_name: res.locals.appName, start_url: '/login', display: 'standalone', background_color: '#ffffff', theme_color: '#0d5ef1',
   icons: [192, 512].map(s => ({ src: `/static/icon-${s}.png`, sizes: `${s}x${s}`, type: 'image/png', purpose: 'any maskable' })),
 }));
 app.get('/sw.js', (req, res) => res.type('application/javascript').sendFile(path.join(__dirname, '..', 'public', 'sw.js')));
@@ -101,6 +101,6 @@ app.use((err, req, res, next) => {
 
 if (require.main === module) {
   const port = +process.env.PORT || 3000;
-  app.listen(port, () => console.log(`${process.env.APP_NAME || 'SkyDesk'} running on http://localhost:${port}`));
+  app.listen(port, () => console.log(`${process.env.APP_NAME || 'AERON'} running on http://localhost:${port}`));
 }
 module.exports = app;

@@ -7,7 +7,7 @@ h1{font-size:20px;margin:0}h2{font-size:15px;margin:22px 0 8px}.muted{color:#647
 .head{display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid #0f172a;padding-bottom:10px}
 .kv{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.kv div{border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px}.kv b{display:block;font-size:15px}
 table{border-collapse:collapse;width:100%}th,td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left;vertical-align:top}th{background:#f8fafc}
-.ok{color:#047857}.warn{color:#b45309}.bad{color:#b91c1c}.info{color:#0f766e}
+.ok{color:#047857}.warn{color:#b45309}.bad{color:#b91c1c}.info{color:#0b4fd0}
 .figs{display:grid;grid-template-columns:1fr 1fr;gap:12px}svg{width:100%;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc}
 @media print{body{background:#fff}.doc{margin:0;padding:0}.noprint{display:none}h2{break-after:avoid}table,svg{break-inside:avoid}}
 </style></head><body>
@@ -38,10 +38,10 @@ table{border-collapse:collapse;width:100%}th,td{border:1px solid #cbd5e1;padding
     <div><b><%= S.vibe_avg != null ? S.vibe_avg + ' m/s²' : '—' %></b><span class="muted">Average vibration</span></div>
   </div>
   <div class="figs mt">
-    <div><h2>Track (top view, north up)</h2><svg viewBox="0 0 <%= W %> <%= W %>"><path d="<%= track %>" fill="none" stroke="#0d9488" stroke-width="2"/>
+    <div><h2>Track (top view, north up)</h2><svg viewBox="0 0 <%= W %> <%= W %>"><path d="<%= track %>" fill="none" stroke="#0d5ef1" stroke-width="2"/>
       <circle cx="<%= sx(xy[0][0]) %>" cy="<%= sy(xy[0][1]) %>" r="6" fill="#059669"/><circle cx="<%= sx(xy.at(-1)[0]) %>" cy="<%= sy(xy.at(-1)[1]) %>" r="6" fill="#dc2626"/>
       <text x="8" y="<%= W - 6 %>" font-size="11" fill="#64748b"><%= Math.round(span) %> m across · green = take-off, red = landing</text></svg></div>
-    <div><h2>Altitude profile</h2><svg viewBox="0 0 400 210"><path d="<%= prof %>" fill="none" stroke="#0d9488" stroke-width="2"/>
+    <div><h2>Altitude profile</h2><svg viewBox="0 0 400 210"><path d="<%= prof %>" fill="none" stroke="#0d5ef1" stroke-width="2"/>
       <line x1="0" y1="190" x2="400" y2="190" stroke="#94a3b8"/><text x="4" y="16" font-size="11" fill="#64748b"><%= maxA.toFixed(0) %> m</text><text x="350" y="205" font-size="11" fill="#64748b"><%= fmtS(dur) %></text></svg></div>
   </div>
   <% if ((A.checks || []).length) { %><h2>Flight health</h2>

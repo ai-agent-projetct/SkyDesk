@@ -98,14 +98,14 @@ for (const cx of [-R, R]) {
   scene.add(flat(new THREE.RingGeometry(R - 0.12, R + 0.12, 96), new THREE.MeshBasicMaterial({ color: 0x2f5a2a, transparent: true, opacity: 0.55 }), cx, 0.035, 0));
   const cone = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.05, 18), new THREE.MeshLambertMaterial({ color: 0xf59e0b })); cone.position.set(cx, 0.52, 0); cone.castShadow = true; scene.add(cone);
 }
-for (const x of [-2 * R, 0, 2 * R]) { const t = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.13, 10, 60), glow(0x22d3ee, 0x0e7490)); t.rotation.x = Math.PI / 2; t.position.set(x, ALT, 0); scene.add(t); }
+for (const x of [-2 * R, 0, 2 * R]) { const t = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.13, 10, 60), glow(0x5b9dff, 0x1d4ed8)); t.rotation.x = Math.PI / 2; t.position.set(x, ALT, 0); scene.add(t); }
 const bpts = []; for (let i = 0; i <= 96; i++) { const a = i / 96 * Math.PI * 2; bpts.push(new THREE.Vector3(Math.cos(a) * 20, 0.05, 2 + Math.sin(a) * 15)); }
 const boundary = new THREE.Line(new THREE.BufferGeometry().setFromPoints(bpts), new THREE.LineDashedMaterial({ color: 0xe2e8f0, dashSize: 1.1, gapSize: 0.9, transparent: true, opacity: 0.7 }));
 boundary.computeLineDistances(); scene.add(boundary);
 
-// drones: the trainee (brand teal) and the instructor's demo drone (white)
+// drones: the trainee (brand blue) and the instructor's demo drone (white)
 const S = 1.7, GROUND = 0.27 * S;
-const trainee = buildDrone(0x0d9488), coach = buildDrone(0xe5e7eb, 0x1d4ed8);
+const trainee = buildDrone(0x0d5ef1), coach = buildDrone(0xe5e7eb, 0x1d4ed8);
 for (const d of [trainee, coach]) { d.pose.scale.setScalar(S); d.pose.traverse(o => { if (o.isMesh) o.castShadow = true; }); scene.add(d.pose); }
 
 // ---------- choreography (seconds). The loop starts and ends on the pad facing away, so it repeats seamlessly. ----------
@@ -147,8 +147,8 @@ const COACH = {
 function rr(x, y, w, h, r, fill) { g.beginPath(); g.roundRect(x, y, w, h, r); g.fillStyle = fill; g.fill(); }
 const FONT = '"Segoe UI","Nirmala UI",system-ui,sans-serif';
 function card(y, label, value, color) {
-  rr(40, y, 176, 104, 18, 'rgba(8,34,40,.72)');
-  g.fillStyle = '#9fd8d0'; g.font = `700 15px ${FONT}`; g.letterSpacing = '2px'; g.textAlign = 'center'; g.fillText(label, 128, y + 32);
+  rr(40, y, 176, 104, 18, 'rgba(8,22,64,.72)');
+  g.fillStyle = '#b9d3ff'; g.font = `700 15px ${FONT}`; g.letterSpacing = '2px'; g.textAlign = 'center'; g.fillText(label, 128, y + 32);
   g.fillStyle = color; g.font = `800 40px ${FONT}`; g.letterSpacing = '0px'; g.fillText(value, 128, y + 80);
 }
 function gimbal(cx, cy, sx, sy) {
@@ -161,10 +161,11 @@ function overlay(t, s) {
   card(40, 'ALTITUDE', s.alt.toFixed(1), '#fff'); card(160, 'SPEED', s.spd.toFixed(1), '#fff');
   card(280, 'MODE', s.mode, { Loiter: '#4ade80', Land: '#fbbf24', Armed: '#fbbf24', Disarmed: '#cbd5e1' }[s.mode]);
   // brand + battery / timer
-  g.textAlign = 'right'; g.fillStyle = 'rgba(8,34,40,.6)'; rr(W - 330, 36, 290, 46, 23, 'rgba(8,34,40,.6)');
-  g.fillStyle = '#2dd4bf'; g.beginPath(); g.arc(W - 308, 59, 6, 0, 7); g.fill();
-  g.fillStyle = '#fff'; g.font = `800 19px ${FONT}`; g.textAlign = 'left'; g.fillText('SkyDesk', W - 292, 66);
-  g.fillStyle = '#cbd5e1'; g.font = `600 15px ${FONT}`; g.fillText('· Practice simulator', W - 208, 66);
+  g.textAlign = 'right'; g.fillStyle = 'rgba(8,22,64,.6)'; rr(W - 330, 36, 290, 46, 23, 'rgba(8,22,64,.6)');
+  g.fillStyle = '#5b9dff'; g.beginPath(); g.arc(W - 308, 59, 6, 0, 7); g.fill();
+  g.fillStyle = '#fff'; g.font = `800 19px ${FONT}`; g.textAlign = 'left'; g.fillText('AERON', W - 292, 66);
+  const bw = g.measureText('AERON').width;
+  g.fillStyle = '#cbd5e1'; g.font = `600 15px ${FONT}`; g.fillText('· Practice simulator', W - 292 + bw + 8, 66);
   const sec = Math.floor(t);
   g.textAlign = 'right'; g.fillStyle = '#e2e8f0'; g.font = `600 15px ${FONT}`;
   g.fillText(`BATT ${Math.round(100 - 22 * t / LOOP)}%   ·   ${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`, W - 42, 110);
@@ -172,14 +173,14 @@ function overlay(t, s) {
   const [line, lang] = COACH[s.phase];
   if (line !== lastLine) { lastLine = line; lineAt = t; }
   const a = clamp((t - lineAt) / 0.35, 0, 1), bx = W - 540, by = H - 190;
-  rr(bx, by, 500, 92, 22, 'rgba(8,34,40,.78)');
-  g.fillStyle = '#0f3d44'; g.beginPath(); g.arc(bx + 50, by + 46, 28, 0, 7); g.fill(); g.strokeStyle = '#2dd4bf'; g.lineWidth = 2; g.stroke();
+  rr(bx, by, 500, 92, 22, 'rgba(8,22,64,.78)');
+  g.fillStyle = '#16307a'; g.beginPath(); g.arc(bx + 50, by + 46, 28, 0, 7); g.fill(); g.strokeStyle = '#5b9dff'; g.lineWidth = 2; g.stroke();
   g.font = `30px ${FONT}`; g.textAlign = 'center'; g.fillText('🧑‍✈️', bx + 50, by + 57);
   g.textAlign = 'left'; g.globalAlpha = a; g.fillStyle = '#fff'; g.font = `700 22px ${FONT}`; g.fillText(line, bx + 94, by + 42, 390);
-  g.globalAlpha = 1; g.fillStyle = '#5eead4'; g.font = `600 15px ${FONT}`; g.fillText(`Instructor · voice coaching · ${lang}`, bx + 94, by + 70);
+  g.globalAlpha = 1; g.fillStyle = '#8fb8ff'; g.font = `600 15px ${FONT}`; g.fillText(`Instructor · voice coaching · ${lang}`, bx + 94, by + 70);
   // Mode-2 transmitter: left = throttle / yaw, right = pitch / roll
-  const cx = W / 2; rr(cx - 190, H - 132, 380, 150, 26, 'rgba(15,32,48,.9)');
-  g.fillStyle = '#94a3b8'; g.font = `700 13px ${FONT}`; g.letterSpacing = '3px'; g.textAlign = 'center'; g.fillText('SKYDESK RC · MODE 2', cx, H - 104); g.letterSpacing = '0px';
+  const cx = W / 2; rr(cx - 190, H - 132, 380, 150, 26, 'rgba(10,24,64,.9)');
+  g.fillStyle = '#94a3b8'; g.font = `700 13px ${FONT}`; g.letterSpacing = '3px'; g.textAlign = 'center'; g.fillText('AERON RC · MODE 2', cx, H - 104); g.letterSpacing = '0px';
   gimbal(cx - 96, H - 52, s.yawStick, s.thrStick); gimbal(cx + 96, H - 52, s.rollStick, s.pitchStick);
   g.fillStyle = s.mode === 'Disarmed' ? '#64748b' : '#4ade80'; g.beginPath(); g.arc(cx, H - 70, 6, 0, 7); g.fill();
 }
@@ -212,34 +213,79 @@ function render(t, dt) {
   prev.p.copy(p); prev.v.copy(vel);
 }
 
-// ---------- loop, and optional recording of exactly one loop ----------
+// ---------- live loop, or an offline recording of exactly one loop ----------
 const params = new URLSearchParams(location.search);
-let t0 = null, lastNow = null, recorder = null, chunks = [];
-if (params.has('record')) {
-  const type = ['video/mp4;codecs=avc1.42E01E', 'video/webm;codecs=vp9', 'video/webm'].find(x => MediaRecorder.isTypeSupported(x));
-  recorder = new MediaRecorder(out.captureStream(30), { mimeType: type, videoBitsPerSecond: +params.get('bps') || 3000000 });
-  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-  recorder.onstop = async () => {
-    const blob = new Blob(chunks, { type: recorder.mimeType }), ext = /mp4/.test(recorder.mimeType) ? 'mp4' : 'webm';
-    window.__recording = { size: blob.size, type: recorder.mimeType, seconds: +LOOP.toFixed(2) };
-    const up = params.get('upload');
-    if (up) {
-      await fetch(`${up}?name=sim-demo.${ext}`, { method: 'POST', body: blob });
-      window.__recording.uploaded = true;
-    } else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `skydesk-simulator.${ext}`; a.click(); }
-  };
-}
-let posterDone = false;
+let t0 = null, lastNow = null;
 function frame(now) {
-  if (t0 === null) { t0 = now; lastNow = now; if (recorder) recorder.start(); }
-  const elapsed = (now - t0) / 1000, dt = Math.min(0.1, (now - lastNow) / 1000); lastNow = now;
-  render(elapsed % LOOP, dt);
-  window.__field = { t: +elapsed.toFixed(2), loop: +LOOP.toFixed(2) }; // lets tooling check progress while recording
-  if (recorder && !posterDone && elapsed >= 11.2) { // a banking moment on the left loop makes the poster frame
-    posterDone = true; const up = params.get('upload');
-    if (up) out.toBlob(b => fetch(`${up}?name=sim-demo.jpg`, { method: 'POST', body: b }), 'image/jpeg', 0.86);
-  }
-  if (recorder && recorder.state === 'recording' && elapsed >= LOOP) { recorder.stop(); document.title = 'recorded'; }
+  if (t0 === null) { t0 = now; lastNow = now; }
+  const dt = Math.min(0.1, (now - lastNow) / 1000); lastNow = now;
+  render(((now - t0) / 1000) % LOOP, dt);
   requestAnimationFrame(frame);
 }
-requestAnimationFrame(frame);
+if (params.has('record')) record(); else requestAnimationFrame(frame);
+
+// Frames are rendered at fixed 1/30 s steps and encoded with WebCodecs, so the video is frame-perfect and needs no
+// visible window (requestAnimationFrame pauses in background tabs). The H.264 samples are packed into an MP4 below.
+async function record() {
+  const FPS = 30, N = Math.round(LOOP * FPS), up = params.get('upload'), samples = [];
+  let avcC = null, poster = null, failed = null;
+  const enc = new VideoEncoder({
+    output: (chunk, meta) => {
+      if (meta && meta.decoderConfig && meta.decoderConfig.description) avcC = new Uint8Array(meta.decoderConfig.description);
+      const b = new Uint8Array(chunk.byteLength); chunk.copyTo(b); samples.push({ b, key: chunk.type === 'key' });
+    },
+    error: e => { failed = String(e); },
+  });
+  // Baseline profile: no B-frames, so decode order = display order and the MP4 needs no ctts box.
+  enc.configure({ codec: 'avc1.42001f', width: W, height: H, bitrate: +params.get('bps') || 3000000, framerate: FPS, avc: { format: 'avc' } });
+  for (let i = 0; i < N && !failed; i++) {
+    render(i / FPS, i ? 1 / FPS : 0);
+    const f = new VideoFrame(out, { timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
+    enc.encode(f, { keyFrame: i % (2 * FPS) === 0 }); f.close();
+    if (i === Math.round(11.2 * FPS)) poster = await new Promise(r => out.toBlob(r, 'image/jpeg', 0.86)); // banking on the left loop
+    if (enc.encodeQueueSize > 6) await new Promise(r => enc.addEventListener('dequeue', r, { once: true }));
+    window.__field = { t: +(i / FPS).toFixed(2), loop: +LOOP.toFixed(2) }; // progress for tooling
+  }
+  if (!failed) await enc.flush();
+  if (failed || !avcC) { window.__recording = { error: failed || 'encoder gave no avcC' }; return; }
+  const blob = mp4(samples, avcC, W, H, FPS);
+  window.__recording = { size: blob.size, type: 'video/mp4', frames: samples.length, seconds: +(samples.length / FPS).toFixed(2) };
+  if (up) {
+    await fetch(`${up}?name=sim-demo.jpg`, { method: 'POST', body: poster });
+    await fetch(`${up}?name=sim-demo.mp4`, { method: 'POST', body: blob });
+    window.__recording.uploaded = true;
+  } else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'aeron-simulator.mp4'; a.click(); }
+  document.title = 'recorded';
+}
+
+// Minimal MP4 (ISO BMFF) for one constant-frame-rate H.264 track: ftyp, moov (sample tables), one mdat chunk.
+function mp4(samples, avcC, w, h, fps) {
+  const u32 = n => [n >>> 24 & 255, n >>> 16 & 255, n >>> 8 & 255, n & 255], u16 = n => [n >> 8 & 255, n & 255];
+  const str = s => [...s].map(c => c.charCodeAt(0)), zeros = n => new Array(n).fill(0);
+  const box = (type, ...c) => { c = c.flat(9); return [...u32(c.length + 8), ...str(type), ...c]; };
+  const full = (type, flags, ...c) => box(type, 0, u32(flags).slice(1), ...c); // version 0
+  const TS = fps * 1000, DELTA = 1000, n = samples.length, DUR = n * DELTA;
+  const matrix = [0x10000, 0, 0, 0, 0x10000, 0, 0, 0, 0x40000000].map(u32);
+  const keys = samples.map((s, i) => s.key ? i + 1 : 0).filter(Boolean);
+  const moov = off => box('moov',
+    full('mvhd', 0, u32(0), u32(0), u32(TS), u32(DUR), u32(0x10000), u16(0x100), zeros(10), matrix, zeros(24), u32(2)),
+    box('trak',
+      full('tkhd', 3, u32(0), u32(0), u32(1), u32(0), u32(DUR), zeros(8), u16(0), u16(0), u16(0), u16(0), matrix, u32(w * 65536), u32(h * 65536)),
+      box('mdia',
+        full('mdhd', 0, u32(0), u32(0), u32(TS), u32(DUR), u16(0x55c4), u16(0)),
+        full('hdlr', 0, u32(0), str('vide'), zeros(12), str('VideoHandler'), 0),
+        box('minf',
+          full('vmhd', 1, zeros(8)),
+          box('dinf', full('dref', 0, u32(1), full('url ', 1))),
+          box('stbl',
+            full('stsd', 0, u32(1), box('avc1', zeros(6), u16(1), zeros(16), u16(w), u16(h), u32(0x480000), u32(0x480000), u32(0), u16(1),
+              zeros(32), u16(0x18), u16(0xffff), box('avcC', [...avcC]))),
+            full('stts', 0, u32(1), u32(n), u32(DELTA)),
+            full('stss', 0, u32(keys.length), keys.map(u32)),
+            full('stsc', 0, u32(1), u32(1), u32(n), u32(1)),
+            full('stsz', 0, u32(0), u32(n), samples.map(s => u32(s.b.length))),
+            full('stco', 0, u32(1), u32(off)))))));
+  const ftyp = box('ftyp', str('isom'), u32(512), str('isomiso2avc1mp41'));
+  const head = ftyp.length + moov(0).length, bytes = samples.reduce((a, s) => a + s.b.length, 0);
+  return new Blob([new Uint8Array([...ftyp, ...moov(head + 8), ...u32(bytes + 8), ...str('mdat')]), ...samples.map(s => s.b)], { type: 'video/mp4' });
+}

@@ -7,7 +7,7 @@ export function buildDrone(bodyColor, canopyColor = 0x1e293b) {
   const pose = new THREE.Group(), tilt = new THREE.Group(); pose.add(tilt);
   const M = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.15, ...o });
   const body = M(bodyColor, { roughness: 0.32, metalness: 0.25 }), dark = M(canopyColor, { roughness: 0.55 }), grey = M(0xa3acb9, { metalness: 0.55, roughness: 0.35 });
-  const orange = M(0xf97316, { roughness: 0.4 }), black = M(0x0b1220, { roughness: 0.2, metalness: 0.7 });
+  const accent = M(0x2774ed, { roughness: 0.4 }), black = M(0x0b1220, { roughness: 0.2, metalness: 0.7 });
   const add = (geo, mat, x = 0, y = 0, z = 0, parent = tilt) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); parent.add(m); return m; };
 
   const fuselage = add(new THREE.CapsuleGeometry(0.19, 0.34, 8, 20), body); fuselage.rotation.x = Math.PI / 2; fuselage.scale.set(1.15, 1, 0.72);
@@ -28,7 +28,7 @@ export function buildDrone(bodyColor, canopyColor = 0x1e293b) {
     const disc = add(new THREE.CircleGeometry(0.25, 32), new THREE.MeshBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0, depthWrite: false }), 0, 0.002, 0, hub);
     disc.rotation.x = -Math.PI / 2;                                                                         // motion blur disc when spinning fast
     const guard = add(new THREE.TorusGeometry(0.28, 0.012, 8, 40), grey, mx, 0.115, mz); guard.rotation.x = Math.PI / 2;
-    for (let k = 0; k < 4; k++) { const g = k * Math.PI / 2 + r; add(new THREE.BoxGeometry(0.035, 0.03, 0.06), orange, mx + Math.cos(g) * 0.28, 0.115, mz + Math.sin(g) * 0.28).rotation.y = -g; }
+    for (let k = 0; k < 4; k++) { const g = k * Math.PI / 2 + r; add(new THREE.BoxGeometry(0.035, 0.03, 0.06), accent, mx + Math.cos(g) * 0.28, 0.115, mz + Math.sin(g) * 0.28).rotation.y = -g; }
     props.push({ hub, disc, dir: i % 2 ? 1 : -1 });
   });
   for (const x of [-0.16, 0.16]) {                                                                          // skids

@@ -54,7 +54,7 @@ document.getElementById('buyBtn').onclick = async e => {
   const r = await fetch('/rpto/billing/order', { method: 'POST', body: new URLSearchParams({ quantity: qty.value }) });
   const o = await r.json(); e.target.disabled = false;
   if (!r.ok) return alert(o.error || 'Could not start payment');
-  new Razorpay({ ...o, theme: { color: '#0d9488' }, handler: resp => {
+  new Razorpay({ ...o, theme: { color: '#0d5ef1' }, handler: resp => {
     const f = document.getElementById('verify');
     for (const k of ['razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature']) f.elements[k].value = resp[k];
     f.submit();

@@ -60,11 +60,11 @@ function start() {
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(30, 1, 0.05, 500);
   // Theme colours come from the stylesheet (--brand / --trail in home.css), so a re-theme is a CSS-only change.
   const css = getComputedStyle(document.body), themed = (v, d) => new THREE.Color(css.getPropertyValue(v).trim() || d);
-  scene.add(new THREE.HemisphereLight(0xe6fbf6, 0x44403c, 1.7));
+  scene.add(new THREE.HemisphereLight(0xe8f0ff, 0x44403c, 1.7));
   const sun = new THREE.DirectionalLight(0xffffff, 2.4); sun.position.set(5, 9, 7); scene.add(sun);
-  const fog = new THREE.Fog(0xdaf3ee, 45, 160);
-  const D = buildDrone(themed('--brand', '#0d9488')); scene.add(D.pose);
-  const W = buildWorld(themed('--trail', '#2dd4bf')); W.group.visible = false; scene.add(W.group);
+  const fog = new THREE.Fog(0xe3edff, 45, 160);
+  const D = buildDrone(themed('--brand', '#0d5ef1')); scene.add(D.pose);
+  const W = buildWorld(themed('--trail', '#5b9dff')); W.group.visible = false; scene.add(W.group);
 
   const SCREEN_CAM = new THREE.Vector3(0, 2.2, 10), ORIGIN = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
   let keys = [], rep = { top: 0, h: 1 }, night = [], vw = 1, vh = 1;
