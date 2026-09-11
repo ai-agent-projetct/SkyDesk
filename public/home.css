@@ -72,6 +72,8 @@ body.home3d{background:#ecfbf8;color:#0f172a;overflow-x:hidden}
 .h-sec .sub{color:#475569;font-size:17px;max-width:700px;margin:0 0 34px}
 .night{color:#e2e8f0}.night .sub{color:#94a3b8}
 .sim-demo{margin:0 0 34px;max-width:1040px}
+.centered{text-align:center}.centered h2,.centered .sub,.centered .sim-demo,.centered .cards{margin-left:auto;margin-right:auto}
+.centered .cards{max-width:1100px}.centered .card3 i{margin:0 auto 14px}
 .sim-demo video{display:block;width:100%;aspect-ratio:16/9;border-radius:18px;border:1px solid rgba(148,163,184,.25);box-shadow:0 24px 60px rgba(0,0,0,.35);background:#062a30}
 .sim-demo figcaption{margin-top:10px;color:#94a3b8;font-size:14px}.sim-demo a{color:var(--trail)}
 html:not(.sky-live) .night{background:#073a42} /* no-JS fallback keeps light text readable */
