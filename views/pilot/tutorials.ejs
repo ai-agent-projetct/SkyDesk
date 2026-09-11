@@ -1,0 +1,17 @@
+<%- include('../partials/app', { title: 'Tutorials' }) %>
+<div class="page-head"><div><h1>Tutorials</h1><div class="muted">Short guides for getting the most out of your logbooks, replays and the simulator.</div></div></div>
+<% const cats = [...new Set(list.map(t => t.category))]; %>
+<% cats.forEach(c => { %>
+<h2 class="mt"><%= c %></h2>
+<div class="grid g3">
+  <% list.filter(t => t.category === c).forEach(t => { %>
+  <a class="card" href="/pilot/tutorials/<%= t.id %>" style="text-decoration:none;color:inherit">
+    <div class="row between"><b><%= t.title %></b><% if (t.status === 'soon') { %><span class="pill warn">Coming soon</span><% } else if (t.video_url) { %><span class="pill info">▶ Video</span><% } %></div>
+    <p class="small muted"><%= String(t.description || '').slice(0, 140) %><%= String(t.description || '').length > 140 ? '…' : '' %></p>
+    <div class="small muted"><%= t.comments %> comment(s)</div>
+  </a>
+  <% }) %>
+</div>
+<% }) %>
+<% if (!list.length) { %><div class="card empty">No tutorials yet — check back soon.</div><% } %>
+<%- include('../partials/end') %>

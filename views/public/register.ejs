@@ -1,0 +1,17 @@
+<%- include('../partials/site', { title: 'Student sign-up' }) %>
+<div class="auth">
+  <div class="card">
+    <h1>Student sign-up</h1>
+    <p class="muted">Create your pilot account, then apply to a batch at any approved RPTO.</p>
+    <% if (error) { %><div class="alert bad"><%= error %></div><% } %>
+    <form method="post">
+      <div class="field"><label>Full name *</label><input name="name" value="<%= b.name || '' %>" required></div>
+      <div class="field"><label>Email *</label><input name="email" type="email" value="<%= b.email || '' %>" required></div>
+      <div class="field"><label>Mobile</label><input name="phone" value="<%= b.phone || '' %>"></div>
+      <div class="field"><label>Password * (min 8)</label><input name="password" type="password" minlength="8" required autocomplete="new-password"></div>
+      <button class="btn pri" style="width:100%;justify-content:center">Create account</button>
+    </form>
+    <p class="small muted mt">Already registered? <a href="/login">Log in</a></p>
+  </div>
+</div>
+<%- include('../partials/site-end') %>

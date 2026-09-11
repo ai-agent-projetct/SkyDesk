@@ -1,0 +1,30 @@
+<%- include('../partials/app', { title: 'Platform dashboard' }) %>
+<div class="page-head"><div><h1>Platform dashboard</h1><div class="muted">All RPTOs, staff and students across <%= appName %>.</div></div>
+  <a class="btn pri" href="/super/rptos/new">+ Add RPTO</a></div>
+<div class="grid g5">
+  <a class="stat warn" href="/super/rptos?status=pending"><b><%= c.pending %></b><span>Awaiting approval</span></a>
+  <a class="stat ok" href="/super/rptos?status=approved"><b><%= c.approved %></b><span>Active RPTOs</span></a>
+  <a class="stat" href="/super/rptos?status=suspended"><b><%= c.suspended %></b><span>Suspended</span></a>
+  <a class="stat info" href="/super/users?role=member"><b><%= c.staff %></b><span>Staff logins</span></a>
+  <a class="stat info" href="/super/users?role=student"><b><%= c.students %></b><span>Students</span></a>
+  <div class="stat"><b><%= c.batches %></b><span>Running batches</span></div>
+  <div class="stat vio"><b><%= c.certs %></b><span>Certificates issued</span></div>
+  <div class="stat vio"><b><%= c.rpcs %></b><span>RPCs recorded</span></div>
+</div>
+<div class="grid g2 mt">
+  <div class="card">
+    <h2>Pending approvals</h2>
+    <% if (!pending.length) { %><div class="empty">Nothing waiting. 🎉</div><% } %>
+    <% pending.forEach(r => { %>
+      <div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line)">
+        <div><b><%= r.name %></b><div class="small muted"><%= r.city %> · <%= r.docs %> documents · registered <%= fmtDate(r.created_at) %></div></div>
+        <a class="btn sm pri" href="/super/rptos/<%= r.id %>">Review</a>
+      </div>
+    <% }) %>
+  </div>
+  <div class="card">
+    <h2>Recent activity</h2>
+    <ul class="feed"><% recent.forEach(a => { %><li><%= a.text %> <span class="small muted">· <%= a.rpto || 'Platform' %> · <%= fmtDate(a.created_at) %></span></li><% }) %></ul>
+  </div>
+</div>
+<%- include('../partials/end') %>

@@ -1,0 +1,27 @@
+<% const v = k => a && a[k] != null ? a[k] : ''; const named = ['classroom', 'field', 'simulator'].includes(type); %>
+<div class="fields">
+  <div class="field"><label><%= type === 'classroom' ? 'Name / block *' : type === 'field' ? 'Field name *' : type === 'simulator' ? 'Simulator name *' : 'Model / label *' %></label><input name="name" value="<%= v('name') %>" required></div>
+  <% if (!['classroom', 'field', 'simulator'].includes(type)) { %><div class="field"><label>OEM / manufacturer</label><input name="make" value="<%= v('make') %>"></div><% } %>
+  <% if (type === 'rpas') { %>
+    <div class="field"><label>UIN</label><input name="uin" value="<%= v('uin') %>"></div>
+    <div class="field"><label>RPAS category</label><select name="category"><% ['Rotorcraft', 'Aeroplane', 'Hybrid', 'Combination'].forEach(c => { %><option <%= v('category') === c ? 'selected' : '' %>><%= c %></option><% }) %></select></div>
+    <div class="field"><label>Class</label><select name="rpas_class"><% ['Small', 'Micro', 'Medium', 'Nano'].forEach(c => { %><option <%= v('rpas_class') === c ? 'selected' : '' %>><%= c %></option><% }) %></select></div>
+    <div class="field"><label>Batteries per flight</label><input type="number" min="1" name="batteries_per_flight" value="<%= v('batteries_per_flight') %>"></div>
+    <div class="field"><label>Serial no.</label><input name="serial_no" value="<%= v('serial_no') %>"></div>
+    <div class="field"><label>&nbsp;</label><label class="row" style="font-weight:500"><input type="checkbox" name="type_certified" value="1" <%= !a || a.type_certified ? 'checked' : '' %>> DGCA type certified</label></div>
+  <% } %>
+  <% if (type === 'battery') { %>
+    <div class="field"><label>Serial no.</label><input name="serial_no" value="<%= v('serial_no') %>"></div>
+    <div class="field"><label>Capacity (mAh)</label><input type="number" name="capacity_mah" value="<%= v('capacity_mah') %>"></div>
+    <div class="field"><label>Voltage (V)</label><input type="number" step="0.1" name="voltage" value="<%= v('voltage') %>"></div>
+    <div class="field"><label>Cycles already used</label><input type="number" min="0" name="initial_cycles" value="<%= v('initial_cycles') || 0 %>"></div>
+    <div class="field"><label>Retire after (cycles)</label><input type="number" min="1" name="max_cycles" value="<%= v('max_cycles') %>" placeholder="e.g. 300"></div>
+  <% } %>
+  <% if (['charger', 'classroom', 'simulator'].includes(type)) { %>
+    <div class="field"><label><%= type === 'charger' ? 'Number of chargers' : type === 'classroom' ? 'Number of classrooms' : 'Quantity (seats / licences)' %></label><input type="number" min="1" name="quantity" value="<%= v('quantity') || 1 %>"></div>
+  <% } %>
+  <% if (type === 'classroom') { %><div class="field"><label>Capacity per classroom (seats)</label><input type="number" name="capacity_seats" value="<%= v('capacity_seats') %>"></div><% } %>
+  <% if (type === 'field') { %><div class="field"><label>Location</label><input name="location" value="<%= v('location') %>" placeholder="Address or lat, lon"></div><% } %>
+  <% if (!['classroom', 'field', 'simulator'].includes(type)) { %><div class="field"><label>Date of purchase</label><input type="date" name="acquired_on" value="<%= v('acquired_on') %>"></div><% } %>
+</div>
+<div class="field"><label>Notes</label><input name="notes" value="<%= v('notes') %>"></div>

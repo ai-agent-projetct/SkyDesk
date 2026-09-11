@@ -1,0 +1,39 @@
+<%- include('head', { title }) %>
+<%
+  const nav = [];
+  if (user.role === 'super_admin') nav.push(['/super', 'Dashboard'], ['/super/rptos', 'RPTOs'], ['/super/rptos/new', 'Add RPTO'], ['/super/users', 'All users'], ['/super/payments', 'Payments'], ['/super/defaults', 'Training defaults'], ['/super/tutorials', 'Tutorials']);
+  else if (user.role === 'member' && user.rpto && user.rpto.status === 'approved') {
+    nav.push(['/rpto', 'Dashboard']);
+    if (user.isAdmin || user.isBD) nav.push(['/rpto/crm', 'CRM & fees']);
+    if (user.isAdmin) nav.push(['/rpto/admissions', 'Admissions']);
+    if (user.isAdmin || user.isInstructor) nav.push(['/rpto/batches', 'Batches'], ['/rpto/assets', 'Assets'], ['/rpto/logbook', 'Logbook'], ['/rpto/reports', 'Reports']);
+    if (user.isAdmin) nav.push(['/rpto/members', 'Members'], ['/rpto/settings', 'Settings']);
+    if (user.isAdmin && (features.credits || features.partner)) nav.push(['/rpto/billing', 'Billing']);
+    nav.push(['/pilot', 'Pilot hub'], ['/flights', 'My flights'], ['/pilot/logbook', 'Logbooks'], ['/pilot/fleet', 'My fleet'], ['/simulator', 'Simulator'], ['/pilot/tutorials', 'Tutorials']);
+  } else if (user.role === 'student') nav.push(['/student', 'My training'], ['/student/apply', 'Apply / batches'], ['/student/documents', 'My documents'],
+    ['/pilot', 'Pilot hub'], ['/flights', 'My flights & 3D replay'], ['/pilot/logbook', 'Logbooks'], ['/pilot/fleet', 'My fleet'], ['/simulator', 'Practice simulator'],
+    ['/pilot/tutorials', 'Tutorials'], ['/student/billing', 'Plans & billing']);
+  const parent = { '/rpto/sessions': '/rpto/batches', '/rpto/tests': '/rpto/batches', '/rpto/trainees': '/rpto/admissions', '/rpto/applications': '/rpto/admissions', '/student/tests': '/student', '/student/record': '/student' };
+  const p = Object.entries(parent).reduce((acc, [from, to]) => acc.startsWith(from + '/') ? to : acc, path);
+  const cur = nav.filter(([h]) => p === h || p.startsWith(h + '/')).sort((a, b) => b[0].length - a[0].length)[0];
+  const av = user.avatar;
+%>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><%= appName %> <span><%= user.role === 'super_admin' ? 'Admin' : user.role === 'student' ? 'Pilot' : 'RPTO' %></span></div>
+    <div class="org row" style="gap:10px;flex-wrap:nowrap">
+      <span class="avatar"><% if (av && av.includes('.')) { %><img src="/files/<%= av %>" alt=""><% } else { %><%= av || user.name[0] %><% } %></span>
+      <span><% if (user.rpto) { %><%= user.rpto.name %><br><% } %><%= user.name %><% if (user.roles) { %> · <%= user.roles.join(', ') %><% } %></span>
+    </div>
+    <nav>
+      <% nav.forEach(([href, label]) => { %><a href="<%= href %>" class="<%= cur && cur[0] === href ? 'on' : '' %>"><%= label %></a><% }) %>
+    </nav>
+    <div class="foot">
+      <button id="installBtn" hidden>⬇ Install app</button>
+      <button type="button" title="Clear cached files and reload the latest version" onclick="(async () => { try { await Promise.all((await caches.keys()).map(k => caches.delete(k))); for (const r of await navigator.serviceWorker?.getRegistrations?.() || []) await r.update(); } catch {} location.reload(); })()">⟳ Refresh app</button>
+      <a href="/account">My account</a>
+      <form method="post" action="/logout"><button>Sign out</button></form>
+    </div>
+  </aside>
+  <main>
+  <% if (flash) { %><div class="flash"><%= flash %></div><% } %>

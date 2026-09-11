@@ -1,0 +1,16 @@
+<%- include('../partials/site', { title: 'Set a new password' }) %>
+<div class="auth">
+  <div class="card">
+    <h1>Set a new password</h1>
+    <% if (!ok) { %>
+      <div class="alert bad">This link is invalid or has expired. <a href="/forgot">Request a new one</a>.</div>
+    <% } else { %>
+      <% if (error) { %><div class="alert bad"><%= error %></div><% } %>
+      <form method="post">
+        <div class="field"><label>New password (min 8)</label><input type="password" name="password" minlength="8" required autofocus autocomplete="new-password"></div>
+        <button class="btn pri">Save password & log in</button>
+      </form>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/site-end') %>

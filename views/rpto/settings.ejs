@@ -1,0 +1,66 @@
+<%- include('../partials/app', { title: 'Settings' }) %>
+<div class="page-head"><div><h1>Organisation settings</h1><div class="muted">Identity, branding and set-up for your RPTO.</div></div></div>
+<div class="tabs">
+  <a href="?tab=about" class="<%= tab === 'about' ? 'on' : '' %>">About</a>
+  <a href="?tab=branding" class="<%= tab === 'branding' ? 'on' : '' %>">Logo, signature, stamp & branding</a>
+  <a href="?tab=roll" class="<%= tab === 'roll' ? 'on' : '' %>">Roll & certificate numbers</a>
+  <a href="?tab=syllabus" class="<%= tab === 'syllabus' ? 'on' : '' %>">Syllabus</a>
+  <a href="?tab=questions" class="<%= tab === 'questions' ? 'on' : '' %>">Question bank</a>
+</div>
+
+<% if (tab === 'about') { const ro = rpto.about_locked ? 'readonly' : ''; %>
+<form class="card" method="post" action="/rpto/settings/about" style="max-width:820px">
+  <h2>About your RPTO</h2>
+  <p class="small muted">Name, address and DGCA authorisation as on your Certificate of Authorisation.<%= rpto.about_locked ? ' These are locked after approval so they always match the official certificate — ask the platform admin to unlock if they change.' : '' %></p>
+  <div class="fields">
+    <div class="field"><label>RPTO name</label><input name="name" value="<%= rpto.name %>" <%= ro %>></div>
+    <div class="field"><label>City</label><input name="city" value="<%= rpto.city || '' %>" <%= ro %>></div>
+    <div class="field"><label>RPTO authorisation no.</label><input name="auth_no" value="<%= rpto.auth_no || '' %>" <%= ro %>></div>
+    <div class="field"><label>File no.</label><input name="file_no" value="<%= rpto.file_no || '' %>" <%= ro %>></div>
+    <div class="field"><label>Accountable Manager</label><input name="accountable_manager" value="<%= rpto.accountable_manager || '' %>" <%= ro %>></div>
+    <div class="field"><label>Contact email</label><input name="contact_email" value="<%= rpto.contact_email || '' %>"></div>
+    <div class="field"><label>Contact phone</label><input name="contact_phone" value="<%= rpto.contact_phone || '' %>"></div>
+    <div class="field"><label>GSTIN (printed on fee receipts)</label><input name="gstin" value="<%= rpto.gstin || '' %>" maxlength="15" pattern="[0-9A-Za-z]{15}" placeholder="15 characters"></div>
+  </div>
+  <div class="field"><label>Address</label><textarea name="address" rows="2" <%= ro %>><%= rpto.address || '' %></textarea></div>
+  <button class="btn pri">Save settings</button>
+</form>
+<% } else if (tab === 'branding') { %>
+<form class="card" method="post" action="/rpto/settings/branding" enctype="multipart/form-data" style="max-width:820px">
+  <h2>Logo, signature & stamp</h2>
+  <p class="small muted">Printed on course certificates, test packs and training records.</p>
+  <div class="grid g3">
+    <% [['logo', 'Logo'], ['signature', 'Accountable Manager signature'], ['stamp', 'Company stamp / seal']].forEach(([k, l]) => { %>
+      <div class="field"><label><%= l %></label>
+        <% if (rpto[k]) { %><img src="/files/<%= rpto[k] %>" alt="<%= l %>" style="max-height:80px;display:block;margin-bottom:6px;border:1px solid var(--line);border-radius:8px;padding:4px"><% } %>
+        <input type="file" name="<%= k %>" accept=".png,.jpg,.jpeg,.webp"></div>
+    <% }) %>
+  </div>
+  <h2 class="mt">Tagline & branding</h2>
+  <div class="fields">
+    <div class="field"><label>Tagline</label><input name="tagline" value="<%= rpto.tagline || '' %>" placeholder="e.g. DGCA-approved remote pilot training"></div>
+    <div class="field"><label>Brand colour</label><input type="color" name="brand_color" value="<%= rpto.brand_color || '#1d6fe8' %>" style="height:38px"></div>
+    <div class="field"><label>Default RPA trainer (certificate signatory)</label><select name="default_trainer_id"><option value="">—</option>
+      <% instructors.forEach(i => { %><option value="<%= i.id %>" <%= i.id === rpto.default_trainer_id ? 'selected' : '' %>><%= i.name %><%= i.signature ? '' : ' (no signature uploaded)' %></option><% }) %></select></div>
+  </div>
+  <p class="small muted">Certificates are signed by the instructor who flew most with the trainee; the default trainer signs when there is no flight record. Instructors upload their signature under My account.</p>
+  <button class="btn pri">Save branding</button>
+</form>
+<% } else if (tab === 'roll') { %>
+<form class="card" method="post" action="/rpto/settings/roll" style="max-width:820px">
+  <h2>Roll number</h2>
+  <p class="small muted">Assigned automatically when a trainee is admitted. Placeholders: <code>{CODE}</code> <code>{BATCH}</code> <code>{YEAR}</code> <code>{SEQ}</code>.</p>
+  <div class="fields">
+    <div class="field"><label>RPTO code</label><input name="roll_code" value="<%= rpto.roll_code || '' %>" maxlength="20"></div>
+    <div class="field"><label>Roll number format</label><input name="roll_format" value="<%= rpto.roll_format || '' %>" maxlength="100"></div>
+    <div class="field"><label>Certificate number prefix</label><input name="cert_prefix" value="<%= rpto.cert_prefix || '' %>" maxlength="20"></div>
+  </div>
+  <p class="small">Example: <b><%= (rpto.roll_format || '').replaceAll('{CODE}', rpto.roll_code || '').replaceAll('{BATCH}', '04').replaceAll('{YEAR}', new Date().getFullYear()).replaceAll('{SEQ}', '001') %></b> · certificate <b><%= rpto.cert_prefix %>/04/0001</b></p>
+  <button class="btn pri">Save</button>
+</form>
+<% } else if (tab === 'syllabus') { %>
+<%- include('../partials/syllabus-edit', { base: '/rpto/settings', platform: false }) %>
+<% } else { %>
+<%- include('../partials/qbank', { base: '/rpto/settings', platform: false }) %>
+<% } %>
+<%- include('../partials/end') %>

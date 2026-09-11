@@ -1,0 +1,104 @@
+<%- include('../partials/app', { title: 'Logbooks' }) %>
+<div class="page-head">
+  <div><h1>Logbooks</h1><div class="muted">Flight operations, per-RPAS and per-battery logs, and incidents. Training flights are logged automatically from flying sessions.</div></div>
+  <div class="muted"><b><%= flights.length %></b> flights · <b><%= mins(totalMin) %></b> logged</div>
+</div>
+<div class="tabs">
+  <a href="?tab=ops" class="<%= tab === 'ops' ? 'on' : '' %>">Flight ops (<%= flights.length %>)</a>
+  <a href="?tab=rpas" class="<%= tab === 'rpas' ? 'on' : '' %>">RPAS (<%= rpas.length %>)</a>
+  <a href="?tab=batteries" class="<%= tab === 'batteries' ? 'on' : '' %>">Batteries (<%= batteries.length %>)</a>
+  <a href="?tab=incidents" class="<%= tab === 'incidents' ? 'on' : '' %>">Incidents (<%= incidents.length %>)</a>
+  <a href="?tab=maintenance" class="<%= tab === 'maintenance' ? 'on' : '' %>">Maintenance (<%= maintenance.length %>)</a>
+</div>
+
+<% if (tab === 'ops') { %>
+<div class="row mb"><span class="muted small grow">All flight activity — use “Add flight entry” for anything outside training sessions.</span>
+  <a class="btn sm" href="/rpto/logbook?export=1">Export to Excel</a><button class="btn sm pri" data-open="addFlight">+ Add flight entry</button></div>
+<div class="tbl-wrap"><table>
+  <tr><th>Date</th><th>Time</th><th>Activity</th><th>Pilot</th><th>RPAS</th><th>Battery</th><th>Field / place</th><th>Duration</th><th>Remarks</th><th></th></tr>
+  <% flights.forEach(f => { %><tr><td class="nowrap"><%= f.date %></td><td><%= String(f.time || '').slice(0, 5) %></td><td><span class="pill"><%= f.activity_type %></span> <%= f.activity %></td><td><%= f.pilot_name %></td><td><%= f.rpas || '—' %></td><td class="small"><%= f.battery_sn || f.battery || '—' %></td><td><%= f.field || f.place || '—' %><%= f.field && f.place && f.place !== f.field ? ' · ' + f.place : '' %></td><td><%= mins(f.minutes) %></td>
+    <td class="small"><%= f.instructor ? 'Instr: ' + f.instructor : '' %> <%= f.remarks || '' %></td>
+    <td class="nowrap"><% if (f.track_id) { %><a class="btn sm" href="/flights/<%= f.track_id %>">3D</a><% } %>
+      <% if (!f.session_id && user.isAdmin) { %><form class="inline" method="post" action="/rpto/logbook/flights/<%= f.id %>/delete" data-confirm="Delete this entry?"><button class="btn sm bad">×</button></form><% } %></td></tr><% }) %>
+  <% if (!flights.length) { %><tr><td colspan="10" class="empty">No flights logged yet.</td></tr><% } %>
+</table></div>
+<% } else if (tab === 'rpas' || tab === 'batteries') { const list = tab === 'rpas' ? rpas : batteries; %>
+<div class="tbl-wrap"><table>
+  <tr><th><%= tab === 'rpas' ? 'RPAS' : 'Battery' %></th><th><%= tab === 'rpas' ? 'UIN' : 'Serial no.' %></th><th><%= tab === 'rpas' ? 'Flights' : 'Cycles' %></th><th>Total time</th><th>Last used</th><th>Incidents</th><th>Status</th><th></th></tr>
+  <% list.forEach(a => { const cycles = (a.initial_cycles || 0) + a.flights; %><tr><td><b><%= a.name %></b><div class="small muted"><%= a.make || '' %></div></td><td><%= tab === 'rpas' ? (a.uin || '—') : (a.serial_no || '—') %></td>
+    <td><%= tab === 'rpas' ? a.flights : cycles %><% if (tab !== 'rpas' && a.max_cycles) { %><span class="small <%= cycles >= a.max_cycles * .9 ? 'bad' : 'muted' %>"> / <%= a.max_cycles %></span><% } %></td>
+    <td><%= mins(+a.minutes) %></td><td><%= a.last_used || '—' %></td><td><%= a.incidents %></td><td><span class="pill <%= a.status %>"><%= a.status.replace('_', ' ') %></span></td>
+    <td><a class="btn sm" target="_blank" href="/rpto/logbook/asset/<%= a.id %>">Logbook</a></td></tr><% }) %>
+  <% if (!list.length) { %><tr><td colspan="8" class="empty">No <%= tab %> — add them under Assets.</td></tr><% } %>
+</table></div>
+<% } else if (tab === 'maintenance') { %>
+<div class="row mb"><span class="muted small grow">Inspections, repairs, part replacements and firmware updates per asset. Set a next-due date to get reminders in Reports.</span><button class="btn sm pri" data-open="addMaint">+ Log maintenance</button></div>
+<div class="tbl-wrap"><table>
+  <tr><th>Date</th><th>Asset</th><th>Type</th><th>Work done</th><th>By</th><th>Next due</th></tr>
+  <% maintenance.forEach(m => { %><tr><td class="nowrap"><%= m.date %></td><td><%= m.asset %> <span class="small muted"><%= L.ASSET_TYPES[m.type] || '' %></span></td><td><span class="pill"><%= m.type %></span></td><td><%= m.description || '—' %></td><td><%= m.done_by || '—' %></td>
+    <td><% if (m.next_due) { %><span class="pill <%= m.next_due < today ? 'bad' : 'info' %>"><%= m.next_due %></span><% } else { %>—<% } %></td></tr><% }) %>
+  <% if (!maintenance.length) { %><tr><td colspan="6" class="empty">No maintenance logged yet.</td></tr><% } %>
+</table></div>
+<dialog id="addMaint"><form method="post" action="/rpto/logbook/maintenance">
+  <h2>Log maintenance</h2>
+  <div class="fields">
+    <div class="field"><label>Asset *</label><select name="asset_id" required><option value="">Select…</option><% assets.forEach(a => { %><option value="<%= a.id %>"><%= L.ASSET_TYPES[a.type] %>: <%= a.name %> <%= a.uin || a.serial_no || '' %></option><% }) %></select></div>
+    <div class="field"><label>Date *</label><input type="date" name="date" value="<%= today %>" required></div>
+    <div class="field"><label>Type</label><select name="type"><% ['inspection', 'repair', 'replacement', 'firmware', 'other'].forEach(x => { %><option><%= x %></option><% }) %></select></div>
+    <div class="field"><label>Done by</label><input name="done_by" value="<%= user.name %>"></div>
+    <div class="field"><label>Next due</label><input type="date" name="next_due"></div>
+    <div class="field"><label>Set asset status</label><select name="set_status"><option value="">— unchanged —</option><option value="in_service">In service</option><option value="maintenance">Maintenance</option><option value="retired">Retired</option></select></div>
+  </div>
+  <div class="field"><label>Work done</label><textarea name="description" rows="3" placeholder="e.g. Replaced propellers, recalibrated compass"></textarea></div>
+  <div class="row"><button class="btn pri">Save</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<% } else { %>
+<div class="row mb"><span class="grow"></span><button class="btn sm pri" data-open="addIncident">+ Report incident</button></div>
+<div class="tbl-wrap"><table>
+  <tr><th>Date</th><th>Where</th><th>Assets involved</th><th>People</th><th>Severity</th><th>Description</th><th>Action taken</th></tr>
+  <% incidents.forEach(i => { %><tr><td class="nowrap"><%= i.date %> <span class="small muted"><%= String(i.time || '').slice(0, 5) %></span></td>
+    <td><%= i.field || '' %><%= i.field && i.location ? ' · ' : '' %><%= i.location || '' %><%= !i.field && !i.location ? '—' : '' %></td><td class="small"><%= i.assets || '—' %></td>
+    <td class="small"><% if (i.trainee) { %><div>Trainee: <%= i.trainee %></div><% } %><% if (i.instructor) { %><div>Instr: <%= i.instructor %></div><% } %><% if (i.pilot_name) { %><div><%= i.pilot_name %></div><% } %></td>
+    <td><span class="pill <%= i.severity %>"><%= i.severity %></span></td><td><%= i.description %></td><td><%= i.action_taken || '—' %></td></tr><% }) %>
+  <% if (!incidents.length) { %><tr><td colspan="7" class="empty">No incidents reported.</td></tr><% } %>
+</table></div>
+<% } %>
+<% const fields = assets.filter(a => a.type === 'field'); %>
+
+<dialog id="addFlight"><form method="post" action="/rpto/logbook/flights">
+  <h2>Add flight entry</h2>
+  <div class="fields">
+    <div class="field"><label>Date *</label><input type="date" name="date" value="<%= today %>" required></div>
+    <div class="field"><label>Time</label><input type="time" name="time"></div>
+    <div class="field"><label>Trainee pilot</label><select name="pilot_id"><option value="">— other (type below) —</option><% pilots.forEach(p => { %><option value="<%= p.id %>"><%= p.name %></option><% }) %></select></div>
+    <div class="field"><label>Or pilot name</label><input name="pilot_name"></div>
+    <div class="field"><label>RPAS</label><select name="rpas_id"><option value="">—</option><% rpas.forEach(a => { %><option value="<%= a.id %>"><%= a.name %> <%= a.uin || '' %></option><% }) %></select></div>
+    <div class="field"><label>Battery</label><select name="battery_id"><option value="">—</option><% batteries.forEach(a => { %><option value="<%= a.id %>"><%= a.name %> <%= a.serial_no || '' %></option><% }) %></select></div>
+    <div class="field"><label>Activity type</label><select name="activity_type"><% ['training', 'test', 'maintenance', 'demonstration', 'survey', 'other'].forEach(x => { %><option><%= x %></option><% }) %></select></div>
+    <div class="field"><label>Flying field</label><select name="field_id"><option value="">—</option><% fields.forEach(a => { %><option value="<%= a.id %>"><%= a.name %></option><% }) %></select></div>
+    <div class="field"><label>Place / location</label><input name="place" placeholder="If not one of your fields"></div>
+    <div class="field"><label>Minutes</label><input type="number" min="0" name="minutes"></div>
+  </div>
+  <div class="field"><label>Activity</label><input name="activity" placeholder="e.g. Demo flight, maintenance test flight"></div>
+  <div class="field"><label>Remarks</label><input name="remarks"></div>
+  <div class="row"><button class="btn pri">Add</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<dialog id="addIncident"><form method="post" action="/rpto/logbook/incidents">
+  <h2>Report incident</h2>
+  <div class="fields">
+    <div class="field"><label>Date *</label><input type="date" name="date" value="<%= today %>" required></div>
+    <div class="field"><label>Time</label><input type="time" name="time"></div>
+    <div class="field"><label>Flying field</label><select name="field_id"><option value="">—</option><% fields.forEach(a => { %><option value="<%= a.id %>"><%= a.name %></option><% }) %></select></div>
+    <div class="field"><label>Location details</label><input name="location" placeholder="e.g. north corner, near the net"></div>
+    <div class="field"><label>Trainee</label><select name="trainee_id"><option value="">—</option><% pilots.forEach(p => { %><option value="<%= p.id %>"><%= p.name %></option><% }) %></select></div>
+    <div class="field"><label>Instructor</label><select name="instructor_id"><option value="">—</option><% instructors.forEach(p => { %><option value="<%= p.id %>" <%= p.id === user.id ? 'selected' : '' %>><%= p.name %></option><% }) %></select></div>
+    <div class="field"><label>Other person involved</label><input name="pilot_name"></div>
+    <div class="field"><label>Severity</label><select name="severity"><option>minor</option><option>major</option><option>serious</option></select></div>
+  </div>
+  <div class="field"><label>Assets involved</label><select name="assets" multiple size="5"><% assets.filter(a => a.type !== 'field').forEach(a => { %><option value="<%= a.id %>"><%= L.ASSET_TYPES[a.type] %>: <%= a.name %> <%= a.uin || a.serial_no || '' %></option><% }) %></select>
+    <div class="small muted">Ctrl/⌘-click to pick several.</div></div>
+  <div class="field"><label>What happened *</label><textarea name="description" rows="3" required></textarea></div>
+  <div class="field"><label>Action taken</label><textarea name="action_taken" rows="2"></textarea></div>
+  <div class="row"><button class="btn pri">Save</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<%- include('../partials/end') %>

@@ -1,0 +1,25 @@
+{
+  "name": "rpto-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Drone RPTO management platform: public site, super admin, RPTO admin, staff and student portals",
+  "main": "src/server.js",
+  "scripts": {
+    "setup": "node --env-file=.env db/setup.js",
+    "start": "node --env-file=.env src/server.js",
+    "dev": "node --env-file=.env --watch src/server.js",
+    "test": "node --env-file=.env test/smoke.js"
+  },
+  "engines": {
+    "node": ">=20.15"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^5.2.1",
+    "multer": "^2.3.0",
+    "mysql2": "^3.11.5",
+    "nodemailer": "^10.0.2",
+    "qrcode": "^1.5.4",
+    "three": "^0.186.0"
+  }
+}

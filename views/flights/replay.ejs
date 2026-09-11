@@ -1,0 +1,147 @@
+<%- include('../partials/app', { title: '3D replay' }) %>
+<% const A = t.analysis || {}, S = A.summary || {}, params = Object.entries(t.params || {}).sort((a, b) => a[0].localeCompare(b[0]));
+   const fmtS = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`; %>
+<div class="page-head">
+  <div><a class="small" href="<%= user.id === t.user_id ? '/flights' : 'javascript:history.back()' %>">← Back</a>
+    <h1>3D replay — <%= t.pilot %></h1>
+    <div class="muted"><%= fmtDate(t.started_at || t.created_at) %> · <%= t.original_name %> (<%= t.format %><%= vehicle ? ', ' + vehicle : '' %>) · <%= mins(Math.round(t.duration_s / 60)) %> · <%= t.distance_m %> m · max <%= t.max_alt_m %> m · <%= t.max_speed %> m/s
+      <%= log ? ' · ' + log.activity + (log.rpas ? ' · ' + log.rpas : '') : '' %></div></div>
+  <div class="row">
+    <% if (t.user_id === user.id && !log) { %><button class="btn <%= t.logged ? '' : 'pri' %>" data-open="toLog"><%= t.logged ? '✎ Logbook details' : '＋ Add to logbook' %></button><% } %>
+    <a class="btn" href="/flights/<%= t.id %>/report" target="_blank">Report (PDF)</a>
+    <a class="btn" href="/files/<%= t.file %>">Download original</a>
+    <% if ((t.user_id === user.id || t.uploaded_by === user.id) && !log) { %><form method="post" action="/flights/<%= t.id %>/delete" data-confirm="Delete this flight?"><button class="btn bad">Delete</button></form><% } %>
+  </div>
+</div>
+<div class="tabs">
+  <% [['replay', '3D replay'], ['graphs', 'Graphs'], ['performance', 'Performance'], ['params', `Parameters (${params.length})`], ['analysis', 'Analysis'], ['pid', 'PID copilot']].forEach(([k, l]) => { %>
+    <a href="?tab=<%= k %>" data-tab="<%= k %>" class="<%= tab === k ? 'on' : '' %>"><%= l %></a><% }) %>
+</div>
+
+<section data-pane="replay" <%= tab === 'replay' ? '' : 'hidden' %>>
+<div class="card" style="padding:0;overflow:hidden">
+  <div class="row between" style="padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:8px">
+    <div class="row" style="flex-wrap:wrap"><% [['oblique', '3D'], ['top', 'Top'], ['side', 'Side'], ['chase', 'Chase'], ['follow', 'Follow'], ['fpv', 'FPV'], ['orbit', 'Orbit']].forEach(([k, l], i) => { %><button class="btn sm <%= i ? '' : 'pri' %>" data-cam="<%= k %>"><%= l %></button><% }) %></div>
+    <div class="row" style="flex-wrap:wrap">
+      <label class="small">Colour <select id="colorBy" style="width:auto"><option value="alt">Altitude</option><option value="spd">Speed</option><option value="climb">Climb</option>
+        <option value="power">Power</option><option value="pitch">Pitch</option><option value="mode">Flight mode</option></select></label>
+      <label class="small"><input type="checkbox" id="showWp" checked> Waypoints</label>
+      <label class="small"><input type="checkbox" id="showFence" checked> Geofence</label>
+      <button class="btn sm pri" id="play">▶ Play</button>
+      <select id="speed" style="width:auto"><option value="1">1×</option><option value="2">2×</option><option value="5" selected>5×</option><option value="10">10×</option><option value="30">30×</option></select>
+      <button class="btn sm" id="record" title="Plays the flight from the start and saves a WebM video">⏺ Record video</button>
+    </div>
+  </div>
+  <canvas id="view" style="width:100%;height:min(62vh,560px);display:block;cursor:grab;touch-action:none"></canvas>
+  <input type="range" id="scrub" min="0" max="1000" value="0" style="border:0;border-radius:0;padding:0 14px">
+  <canvas id="profile" title="Altitude profile and flight modes — click to jump" style="width:100%;height:84px;display:block;cursor:pointer"></canvas>
+  <div id="legend" class="small muted" style="padding:6px 14px"></div>
+</div>
+<div class="grid g5 mt">
+  <div class="stat"><b id="tTime">0:00</b><span>Time</span></div>
+  <div class="stat vio"><b id="tMode">—</b><span>Flight mode</span></div>
+  <div class="stat info"><b id="tAlt">—</b><span>Altitude above take-off</span></div>
+  <div class="stat"><b id="tMsl">—</b><span>Altitude MSL</span></div>
+  <div class="stat"><b id="tClimb">—</b><span>Climb rate</span></div>
+  <div class="stat"><b id="tSpd">—</b><span>Ground speed</span></div>
+  <div class="stat"><b id="tHdg">—</b><span>Heading</span></div>
+  <div class="stat"><b id="tDist">—</b><span>Distance from home</span></div>
+  <div class="stat"><b id="tBat">—</b><span>Battery</span></div>
+  <div class="stat"><b id="tCurr">—</b><span>Current · power</span></div>
+  <div class="stat"><b id="tAtt">—</b><span>Roll · pitch</span></div>
+  <div class="stat"><b id="tVibe">—</b><span>Vibration</span></div>
+  <div class="stat"><b id="tSat">—</b><span>Satellites</span></div>
+  <div class="stat" style="grid-column:span 2"><canvas id="sticks" width="220" height="90" style="width:220px;height:90px;display:block;margin:auto"></canvas><span style="text-align:center;display:block">Sticks (throttle/yaw · pitch/roll)</span></div>
+</div>
+</section>
+
+<section data-pane="graphs" <%= tab === 'graphs' ? '' : 'hidden' %>>
+<div class="card">
+  <div class="row" style="flex-wrap:wrap;margin-bottom:8px" id="presets"></div>
+  <canvas id="graph" style="width:100%;height:320px;display:block;cursor:crosshair"></canvas>
+  <div id="graphLegend" class="small mt"></div>
+  <p class="small muted">Click the graph to move the replay cursor. Presets only appear for data this log contains.</p>
+</div>
+</section>
+
+<section data-pane="performance" <%= tab === 'performance' ? '' : 'hidden' %>>
+<div class="grid g2">
+  <div class="card"><h2>Flight performance</h2>
+    <div class="tbl-wrap"><table>
+      <% [['Flight time', fmtS(t.duration_s)], ['Distance flown', (t.distance_m / 1000).toFixed(2) + ' km'], ['Average / top speed', `${S.avg_speed ?? '—'} / ${t.max_speed} m/s`],
+          ['Highest altitude (take-off)', t.max_alt_m + ' m'], ['Fastest climb / descent', `${S.max_climb ?? '—'} / ${S.max_descent ?? '—'} m/s`], ['Farthest from home', (S.max_home_m ?? '—') + ' m'],
+          ['Battery start → end (lowest)', S.volt_start != null ? `${S.volt_start} → ${S.volt_end} V (${S.volt_min} V)` : '—'], ['Peak current', S.curr_max != null ? S.curr_max + ' A' : '—'],
+          ['Energy used', S.mah != null ? S.mah + ' mAh' : '—'], ['Average vibration', S.vibe_avg != null ? S.vibe_avg + ' m/s²' : '—']].forEach(([k, v]) => { %>
+        <tr><th style="width:45%"><%= k %></th><td><%= v %></td></tr><% }) %>
+    </table></div></div>
+  <div class="card"><h2>Time in each flight mode</h2>
+    <% const mt = Object.entries(S.modeTime || {}).sort((a, b) => b[1] - a[1]); %>
+    <% mt.forEach(([m, s]) => { %><div class="row" style="gap:8px"><span class="small" style="width:120px"><%= m %></span><div class="bar grow"><i style="width:<%= s / (t.duration_s || 1) * 100 %>%"></i></div><span class="small muted" style="width:60px"><%= fmtS(s) %></span></div><% }) %>
+    <% if (!mt.length) { %><div class="empty">This log has no flight-mode data.</div><% } %>
+    <% if (events && events.errors && events.errors.length) { %><h3 class="mt">Events</h3>
+      <div class="tbl-wrap"><table><tr><th>Time</th><th>Subsystem</th><th>Code</th></tr><% events.errors.forEach(e => { %><tr><td><%= fmtS(e[0]) %></td><td><%= e[1] %></td><td><%= e[2] === 0 ? 'cleared' : e[2] %></td></tr><% }) %></table></div><% } %>
+  </div>
+</div>
+</section>
+
+<section data-pane="params" <%= tab === 'params' ? '' : 'hidden' %>>
+<div class="card">
+  <% if (params.length) { %>
+  <div class="row mb"><input id="pSearch" placeholder="Search parameters, e.g. ATC_RAT or BATT" style="max-width:360px"><span class="small muted grow"><%= params.length %> parameters recorded in the log</span></div>
+  <div class="tbl-wrap" style="max-height:60vh"><table id="pTable"><tr><th>Name</th><th>Value</th></tr>
+    <% params.forEach(([k, v]) => { %><tr><td><code><%= k %></code></td><td><%= v %></td></tr><% }) %></table></div>
+  <% } else { %><div class="empty">This log does not contain flight-controller parameters (ArduPilot .bin/.log and PX4 .ulg files do).</div><% } %>
+</div>
+</section>
+
+<section data-pane="analysis" <%= tab === 'analysis' ? '' : 'hidden' %>>
+<div class="card">
+  <h2>Flight health</h2>
+  <p class="small muted">Automatic checks using common rules of thumb. They point you where to look — they do not replace a proper inspection.</p>
+  <% (A.checks || []).forEach(c => { %>
+  <div class="row" style="align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)">
+    <span class="pill <%= { ok: 'ok', warn: 'warn', bad: 'bad', info: 'info' }[c.status] %>" style="min-width:64px;text-align:center"><%= { ok: 'OK', warn: 'Check', bad: 'Problem', info: 'Note' }[c.status] %></span>
+    <div class="grow"><b><%= c.area %></b> — <%= c.value %><% if (c.advice) { %><div class="small muted"><%= c.advice %></div><% } %></div>
+  </div>
+  <% }) %>
+  <% if (!(A.checks || []).length) { %><div class="empty">Not enough data in this log for health checks — a simple GPS track only.</div><% } %>
+</div>
+</section>
+
+<section data-pane="pid" <%= tab === 'pid' ? '' : 'hidden' %>>
+<% if (A.pid) { const changes = A.pid.some(a => a.params.some(p => p.suggested != null && p.current != null && p.suggested !== p.current)); %>
+<div class="alert warn">Suggestions only. Change one axis at a time in small steps, test-fly in a safe open area, and keep a copy of your current parameters. If the aircraft behaves worse, restore them.</div>
+<div class="grid g3">
+  <% A.pid.forEach(a => { %>
+  <div class="card">
+    <div class="row between"><h2 style="margin:0"><%= a.axis %></h2><span class="pill <%= { good: 'ok', oscillating: 'bad', sluggish: 'warn', unknown: '' }[a.verdict] %>"><%= a.verdict %></span></div>
+    <p class="small"><%= a.note %></p>
+    <div class="small muted">Tracking error <%= a.rms %>°/s RMS · demand <%= a.demand %>°/s · oscillation <%= a.osc %> Hz · lag <%= a.lag_ms %> ms</div>
+    <div class="tbl-wrap mt"><table><tr><th>Parameter</th><th>Now</th><th>Suggested</th></tr>
+      <% a.params.forEach(p => { %><tr><td><code><%= p.name %></code></td><td><%= p.current ?? '—' %></td><td><b style="color:<%= p.suggested != null && p.suggested !== p.current ? 'var(--pri)' : 'inherit' %>"><%= p.suggested ?? '—' %></b></td></tr><% }) %></table></div>
+  </div>
+  <% }) %>
+</div>
+<div class="row mt"><% if (changes) { %><a class="btn pri" href="/flights/<%= t.id %>/pid.param">Download suggested .param file</a><% } else { %><span class="muted small">No changes suggested for this flight.</span><% } %></div>
+<% } else { %><div class="card empty">The PID copilot needs rate-controller data (ArduPilot RATE or PX4 rate messages). Enable them in your log settings and fly a few brisk stick inputs.</div><% } %>
+</section>
+
+<% if (t.user_id === user.id && !log) { %>
+<dialog id="toLog"><form method="post" action="/flights/<%= t.id %>/logbook">
+  <h2>Add to my logbook</h2>
+  <p class="small muted">Date, duration, distance and altitude come from the log. Add what the log can't know.</p>
+  <div class="fields">
+    <div class="field"><label>Drone</label><select name="drone_id"><option value="">—</option><% fleet.filter(a => a.type === 'drone').forEach(a => { %><option value="<%= a.id %>" <%= a.id === t.drone_id ? 'selected' : '' %>><%= a.name %> <%= a.uin || '' %></option><% }) %></select></div>
+    <div class="field"><label>Battery</label><select name="battery_id"><option value="">—</option><% fleet.filter(a => a.type === 'battery').forEach(a => { %><option value="<%= a.id %>" <%= a.id === t.battery_id ? 'selected' : '' %>><%= a.name %> <%= a.serial_no || '' %></option><% }) %></select></div>
+    <div class="field"><label>Place</label><input name="place" value="<%= t.place || '' %>" maxlength="150"></div>
+    <div class="field"><label>RPIC (if not you)</label><input name="rpic" value="<%= t.rpic || '' %>" maxlength="150"></div>
+  </div>
+  <div class="field"><label>Exercise / purpose</label><input name="exercise" value="<%= t.exercise || '' %>" maxlength="200"></div>
+  <div class="field"><label>Notes</label><input name="notes" value="<%= t.notes || '' %>" maxlength="255"></div>
+  <% if (!fleet.length) { %><p class="small muted">Tip: add your drones and batteries under <a href="/pilot/fleet">My fleet</a> to track hours and cycles.</p><% } %>
+  <div class="row"><button class="btn pri">Save to logbook</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<% } %>
+<script type="application/json" id="flightData"><%- data %></script>
+<script src="/static/replay.js?v=<%= v %>"></script>
+<%- include('../partials/end') %>

@@ -1,0 +1,43 @@
+<%- include('../partials/app', { title: t.title }) %>
+<div class="page-head">
+  <div><a class="small" href="/rpto/batches/<%= t.batch_id %>#tests">← <%= t.batch_title %></a><h1><%= t.title %> <span class="pill"><%= t.type %></span></h1>
+    <div class="muted">Pass mark <%= t.pass_percent %>%<% if (t.type === 'theory') { %> · <%= t.question_count %> questions · <%= t.duration_min %> min · question bank: <%= bank %><% } %></div></div>
+  <div class="row">
+    <% if (t.type === 'theory') { %><a class="btn" target="_blank" href="/rpto/tests/<%= t.id %>/pack">Download test pack</a><% } %>
+    <% if (user.isAdmin && !t.records_locked) { %><form method="post" action="/rpto/tests/<%= t.id %>/delete" data-confirm="Delete this test and all its results?"><button class="btn bad">Delete</button></form><% } %>
+  </div>
+</div>
+<% if (user.isAdmin) { %>
+<form class="card mb" method="post" action="/rpto/tests/<%= t.id %>">
+  <div class="fields">
+    <div class="field"><label>Title</label><input name="title" value="<%= t.title %>"></div>
+    <div class="field"><label>Pass %</label><input type="number" name="pass_percent" value="<%= t.pass_percent %>" min="1" max="100"></div>
+    <% if (t.type === 'theory') { %>
+      <div class="field"><label>Questions</label><input type="number" name="question_count" value="<%= t.question_count %>" min="1"></div>
+      <div class="field"><label>Duration (min)</label><input type="number" name="duration_min" value="<%= t.duration_min %>" min="1"></div>
+    <% } %>
+  </div>
+  <% if (t.type !== 'practical') { %><label class="row" style="font-weight:500"><input type="checkbox" name="open" value="1" <%= t.open ? 'checked' : '' %>> Open for trainees to take <%= t.type === 'simulator' ? 'in the browser simulator (3 drills, 15 min, self-reported — supervise it)' : 'online' %> now</label><% } %>
+  <button class="btn mt">Save settings</button>
+  <% if (t.type === 'theory' && bank < t.question_count) { %><div class="alert warn mt">The question bank has only <%= bank %> questions. <a href="/rpto/settings?tab=questions">Add questions</a>.</div><% } %>
+</form>
+<% } %>
+<form class="card" method="post" action="/rpto/tests/<%= t.id %>/results">
+  <h2>Results</h2>
+  <p class="small muted"><%= t.type === 'theory' ? 'Online submissions are scored automatically. Enter marks here for offline papers.' : 'Record pass / fail for each trainee.' %></p>
+  <div class="tbl-wrap"><table>
+    <tr><th>Trainee</th><th>Score</th><th>Out of</th><th>Result</th><th>Remarks</th><th>Taken</th></tr>
+    <% rows.forEach(r => { %>
+    <tr><td><b><%= r.name %></b><div class="small muted"><%= r.roll_no || '' %></div></td>
+      <td><input type="number" min="0" name="score_<%= r.id %>" value="<%= r.score ?? '' %>" style="width:90px"></td>
+      <td><input type="number" min="1" name="total_<%= r.id %>" value="<%= r.total ?? (t.type === 'theory' ? t.question_count : '') %>" style="width:90px"></td>
+      <td><select name="result_<%= r.id %>" style="width:120px"><option value="">auto / —</option><option value="pass" <%= r.passed === 1 ? 'selected' : '' %>>Pass</option><option value="fail" <%= r.passed === 0 ? 'selected' : '' %>>Fail</option></select>
+        <% if (r.passed !== null && r.passed !== undefined) { %><span class="pill <%= r.passed ? 'pass' : 'fail' %>"><%= r.passed ? 'pass' : 'fail' %></span><% } %></td>
+      <td><input name="remarks_<%= r.id %>" value="<%= r.remarks || '' %>"></td>
+      <td class="small"><%= r.taken_at ? fmtDate(r.taken_at) : '—' %></td></tr>
+    <% }) %>
+    <% if (!rows.length) { %><tr><td colspan="6" class="empty">No admitted trainees.</td></tr><% } %>
+  </table></div>
+  <button class="btn pri mt" <%= t.records_locked ? 'disabled' : '' %>>Save results</button>
+</form>
+<%- include('../partials/end') %>

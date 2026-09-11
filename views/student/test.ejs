@@ -1,0 +1,32 @@
+<%- include('../partials/app', { title: t.title }) %>
+<div class="page-head"><div><a class="small" href="/student">← My training</a><h1><%= t.title %></h1><div class="muted"><%= t.batch_title %> · pass mark <%= t.pass_percent %>%</div></div>
+  <% if (questions) { %><div class="stat warn"><b id="timer">--:--</b><span>Time left</span></div><% } %></div>
+<% if (!questions) { %>
+  <div class="card" style="max-width:560px">
+    <h2>Your result</h2>
+    <div class="stat <%= row.passed ? 'ok' : 'warn' %>"><b><%= row.score %> / <%= row.total %> · <%= Math.round(row.score / row.total * 100) %>%</b><span><%= row.passed ? 'Passed 🎉' : 'Not passed — speak to your instructor about a re-test.' %></span></div>
+    <% if (row.remarks) { %><p class="small muted mt"><%= row.remarks %></p><% } %>
+  </div>
+<% } else { %>
+<form method="post" id="testForm" class="card" data-confirm="Submit your answers? You cannot change them afterwards.">
+  <ol style="padding-left:20px">
+    <% questions.forEach(q => { %>
+    <li class="mb"><b><%= q.question %></b><% if (q.subject) { %> <span class="small muted">(<%= q.subject %>)</span><% } %>
+      <div class="mt" style="display:grid;gap:6px">
+        <% ['a', 'b', 'c', 'd'].filter(o => q[o]).forEach(o => { %><label class="row" style="font-weight:400"><input type="radio" name="q<%= q.id %>" value="<%= o %>"> <%= o.toUpperCase() %>. <%= q[o] %></label><% }) %>
+      </div></li>
+    <% }) %>
+  </ol>
+  <button class="btn pri">Submit answers</button>
+</form>
+<script>
+let left = <%= secondsLeft %>;
+const el = document.getElementById('timer'), form = document.getElementById('testForm');
+const tick = () => {
+  el.textContent = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
+  if (left-- <= 0) { form.removeAttribute('data-confirm'); form.submit(); }
+};
+tick(); setInterval(tick, 1000);
+</script>
+<% } %>
+<%- include('../partials/end') %>

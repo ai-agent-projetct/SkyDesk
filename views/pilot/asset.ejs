@@ -1,0 +1,49 @@
+<%- include('../partials/app', { title: a.name }) %>
+<div class="page-head">
+  <div><a class="small" href="/pilot/fleet">← My fleet</a><h1><%= a.name %> <span class="pill <%= a.status %>"><%= a.status %></span></h1>
+    <div class="muted"><%= a.type === 'drone' ? 'Drone' : 'Battery' %><%= a.make ? ' · ' + a.make : '' %><%= a.uin ? ' · UIN ' + a.uin : '' %><%= a.serial_no ? ' · S/N ' + a.serial_no : '' %></div></div>
+  <div class="row"><a class="btn" href="/pilot/logbook?book=<%= a.type %>&asset=<%= a.id %>">Logbook</a><button class="btn" data-open="editAsset">Edit</button>
+    <form method="post" action="/pilot/fleet/<%= a.id %>/delete" data-confirm="Remove <%= a.name %> from your fleet? Its flights stay in your logbook."><button class="btn bad">Remove</button></form></div>
+</div>
+<div class="grid g5">
+  <div class="stat info"><b><%= a.flights %></b><span>Flights</span></div>
+  <div class="stat"><b><%= mins(a.minutes) %></b><span>Flight time</span></div>
+  <% if (a.type === 'battery') { %><div class="stat <%= a.max_cycles && a.cycles >= a.max_cycles * .9 ? 'warn' : '' %>"><b><%= a.cycles %><%= a.max_cycles ? ' / ' + a.max_cycles : '' %></b><span>Charge cycles</span></div><% } %>
+  <div class="stat"><b><%= a.last_used || '—' %></b><span>Last used</span></div>
+  <div class="stat <%= a.next_due && a.next_due < today ? 'warn' : '' %>"><b><%= a.next_due || '—' %></b><span>Next maintenance</span></div>
+</div>
+<div class="grid g2 mt">
+  <div class="card">
+    <h2>Flights (<%= flights.length %>)</h2>
+    <div class="tbl-wrap"><table><tr><th>Date</th><th>Activity</th><th>Place</th><th>Time</th><th></th></tr>
+      <% flights.slice().reverse().forEach(x => { %><tr><td class="nowrap"><%= x.date %></td><td><%= x.activity %></td><td class="small"><%= x.place || '—' %></td><td><%= mins(+x.minutes) %></td>
+        <td><% if (x.track) { %><a class="btn sm" href="/flights/<%= x.track %>">3D</a><% } %></td></tr><% }) %>
+      <% if (!flights.length) { %><tr><td colspan="5" class="empty">Pick this <%= a.type %> when you add a flight to your logbook.</td></tr><% } %>
+    </table></div>
+  </div>
+  <div class="card">
+    <div class="row between"><h2 style="margin:0">Maintenance</h2><button class="btn sm pri" data-open="addMaint">+ Log maintenance</button></div>
+    <div class="tbl-wrap mt"><table><tr><th>Date</th><th>Type</th><th>Work done</th><th>Next due</th><th></th></tr>
+      <% maintenance.forEach(m => { %><tr><td class="nowrap"><%= m.date %></td><td><span class="pill"><%= m.type %></span></td><td><%= m.description || '—' %></td>
+        <td><%= m.next_due || '—' %></td><td><form method="post" action="/pilot/maintenance/<%= m.id %>/delete" data-confirm="Delete this entry?"><button class="btn sm bad">×</button></form></td></tr><% }) %>
+      <% if (!maintenance.length) { %><tr><td colspan="5" class="empty">No maintenance logged.</td></tr><% } %>
+    </table></div>
+  </div>
+</div>
+<dialog id="editAsset"><form method="post" action="/pilot/fleet/<%= a.id %>">
+  <h2>Edit <%= a.name %></h2>
+  <%- include('_assetform', { a, type: a.type }) %>
+  <div class="row"><button class="btn pri">Save</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<dialog id="addMaint"><form method="post" action="/pilot/fleet/<%= a.id %>/maintenance">
+  <h2>Log maintenance</h2>
+  <div class="fields">
+    <div class="field"><label>Date *</label><input type="date" name="date" value="<%= today %>" required></div>
+    <div class="field"><label>Type</label><select name="type"><% ['inspection', 'repair', 'replacement', 'firmware', 'other'].forEach(x => { %><option><%= x %></option><% }) %></select></div>
+    <div class="field"><label>Next due</label><input type="date" name="next_due"></div>
+    <div class="field"><label>Set status</label><select name="set_status"><option value="">— unchanged —</option><option value="active">Active</option><option value="maintenance">Maintenance</option><option value="retired">Retired</option></select></div>
+  </div>
+  <div class="field"><label>Work done</label><textarea name="description" rows="3" placeholder="e.g. New propellers, compass calibration, firmware 4.5.1"></textarea></div>
+  <div class="row"><button class="btn pri">Save</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<%- include('../partials/end') %>

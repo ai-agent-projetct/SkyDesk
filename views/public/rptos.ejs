@@ -1,0 +1,20 @@
+<%- include('../partials/site', { title: 'Find an RPTO' }) %>
+<section class="section">
+  <h2>Approved training organisations</h2>
+  <p class="muted">Sign up as a student to apply to an open batch.</p>
+  <div class="grid g3 mt">
+    <% rptos.forEach(r => { %>
+      <div class="card">
+        <b><%= r.name %></b>
+        <div class="muted small"><%= r.city %></div>
+        <% if (r.tagline) { %><p class="small"><%= r.tagline %></p><% } %>
+        <div class="row mt between">
+          <span class="pill <%= r.open_batches ? 'ok' : '' %>"><%= r.open_batches %> open batch<%= r.open_batches == 1 ? '' : 'es' %></span>
+          <div class="row"><a class="btn sm" href="/enquire/<%= r.id %>">Enquire</a><a class="btn sm pri" href="/student/apply?rpto=<%= r.id %>">Apply</a></div>
+        </div>
+      </div>
+    <% }) %>
+    <% if (!rptos.length) { %><div class="card empty">No RPTOs listed yet.</div><% } %>
+  </div>
+</section>
+<%- include('../partials/site-end') %>

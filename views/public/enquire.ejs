@@ -1,0 +1,23 @@
+<%- include('../partials/site', { title: 'Enquire — ' + rpto.name }) %>
+<div class="auth">
+  <div class="card">
+    <h1><%= rpto.name %></h1>
+    <p class="muted"><%= rpto.tagline || 'Drone pilot training' %> · <%= rpto.city %></p>
+    <% if (done) { %>
+      <div class="alert ok">Thank you! The team will get in touch with you shortly.</div>
+    <% } else { %>
+      <form method="post">
+        <div class="field"><label>Your name *</label><input name="name" required></div>
+        <div class="fields">
+          <div class="field"><label>Phone</label><input name="phone"></div>
+          <div class="field"><label>Email</label><input name="email" type="email"></div>
+        </div>
+        <div class="field"><label>City</label><input name="city"></div>
+        <div class="field"><label>Interested in</label><input name="interest" placeholder="e.g. Small category rotorcraft course"></div>
+        <div class="field"><label>Message</label><textarea name="notes" rows="3"></textarea></div>
+        <button class="btn pri">Send enquiry</button>
+      </form>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/site-end') %>

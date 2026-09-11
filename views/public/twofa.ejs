@@ -1,0 +1,44 @@
+<%- include('../partials/app', { title: 'Two-step verification' }) %>
+<div class="page-head"><div><h1>Two-step verification</h1><div class="muted">A code from an authenticator app (Google Authenticator, Microsoft Authenticator, Authy, 1Password…) is asked after your password.</div></div>
+  <a class="btn" href="/account">Back to My account</a></div>
+
+<% if (step === 'setup') { %>
+<div class="grid g2">
+  <div class="card">
+    <h2>1. Scan with your authenticator app</h2>
+    <img src="<%= qr %>" alt="QR code for your authenticator app" width="220" height="220" style="border:1px solid var(--line);border-radius:8px">
+    <p class="small muted">Can't scan? Add an account manually with this key (time-based):</p>
+    <code style="font-size:15px;letter-spacing:.05em"><%= secret %></code>
+  </div>
+  <form class="card" method="post" action="/account/2fa/enable">
+    <h2>2. Enter the 6-digit code it shows</h2>
+    <div class="field"><label>Code</label><input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" required autofocus></div>
+    <button class="btn pri">Turn on</button>
+    <p class="small muted mt">You'll get recovery codes next — keep them somewhere safe.</p>
+  </form>
+</div>
+<% } else if (step === 'codes') { %>
+<div class="card" style="max-width:560px">
+  <h2><%= title %></h2>
+  <div class="alert warn">Save these recovery codes now — they are shown only once. Each works one time if you lose your phone.</div>
+  <pre style="font-size:16px;line-height:1.8;columns:2"><%= codes.join('\n') %></pre>
+  <div class="row"><button class="btn" onclick="navigator.clipboard.writeText(<%= JSON.stringify(codes.join('\n')) %>).then(() => this.textContent = 'Copied ✓')">Copy</button><button class="btn" onclick="print()">Print</button><a class="btn pri" href="/account">Done</a></div>
+</div>
+<% } else { %>
+<div class="grid g2">
+  <div class="card">
+    <h2>Status: <span class="pill ok">On</span></h2>
+    <p><b><%= left %></b> unused recovery code(s).</p>
+    <form method="post" action="/account/2fa/codes" class="row" style="align-items:flex-end">
+      <div class="field grow"><label>Current code from your app</label><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required></div>
+      <div class="field"><button class="btn">New recovery codes</button></div>
+    </form>
+  </div>
+  <form class="card" method="post" action="/account/2fa/disable" data-confirm="Turn off two-step verification?">
+    <h2>Turn off</h2>
+    <div class="field"><label>Your password</label><input type="password" name="password" required autocomplete="current-password"></div>
+    <button class="btn bad">Turn off two-step verification</button>
+  </form>
+</div>
+<% } %>
+<%- include('../partials/end') %>

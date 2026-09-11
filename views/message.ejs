@@ -1,0 +1,9 @@
+<% if (user) { %>
+<%- include('partials/app', { title }) %>
+<div class="card" style="max-width:640px"><h1><%= title %></h1><p class="muted"><%= text %></p><a class="btn" href="javascript:history.back()">Go back</a></div>
+<%- include('partials/end') %>
+<% } else { %>
+<%- include('partials/site', { title }) %>
+<div class="auth"><div class="card"><h1><%= title %></h1><p class="muted"><%= text %></p><a class="btn" href="/">Home</a></div></div>
+<%- include('partials/site-end') %>
+<% } %>

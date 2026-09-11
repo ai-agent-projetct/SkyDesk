@@ -1,0 +1,86 @@
+<%- include('../partials/app', { title: 'Pilot hub' }) %>
+<% const maxM = Math.max(1, ...stats.months.map(m => m.minutes)); %>
+<div class="page-head">
+  <div><h1>Pilot hub</h1><div class="muted">Your flying at a glance — logbooks, fleet, practice and live telemetry.</div></div>
+  <div class="row"><a class="btn pri" href="/flights">⬆ Upload a flight</a><a class="btn" href="/pilot/logbook#add">+ Manual entry</a></div>
+</div>
+
+<div class="grid g5">
+  <div class="stat info"><b><%= mins(stats.minutes) %></b><span>Total flight time · <%= stats.flights %> flights</span></div>
+  <div class="stat"><b><%= mins(month.minutes) %></b><span>This month · <%= month.flights %> flight(s)</span></div>
+  <div class="stat <%= stats.current ? 'ok' : 'warn' %>"><b><%= stats.current ? 'Current' : 'Not current' %></b><span><%= stats.recent %> flight(s) in <%= stats.days %> days</span></div>
+  <div class="stat"><b><%= f.drones.length %> · <%= f.batteries.length %></b><span>Drones · batteries</span></div>
+  <% if (stats.instructing) { %><div class="stat vio"><b><%= mins(stats.instructingMinutes) %></b><span>Instructing · <%= stats.instructing %> flights</span></div>
+  <% } else { %><div class="stat vio"><b><%= sim.n %></b><span>Simulator runs · <%= +sim.passed || 0 %> passed</span></div><% } %>
+</div>
+
+<div class="grid g2 mt">
+  <div class="card">
+    <h2>Last flight</h2>
+    <% if (last) { %>
+      <div class="row between"><div><b><%= last.activity %></b><div class="small muted"><%= fmtDate(last.date) %> <%= String(last.time || '').slice(0, 5) %> · <span class="pill"><%= last.kind %></span></div></div>
+        <% if (last.track) { %><a class="btn sm" href="/flights/<%= last.track %>">3D replay</a><% } %></div>
+      <div class="grid g3 mt">
+        <div><div class="small muted">Duration</div><b><%= mins(last.minutes) %></b></div>
+        <div><div class="small muted">Aircraft</div><b><%= last.aircraft || '—' %></b></div>
+        <div><div class="small muted">Place</div><b><%= last.place || '—' %></b></div>
+      </div>
+    <% } else { %><div class="empty">No flights yet — upload a log or add a manual entry.</div><% } %>
+  </div>
+  <div class="card">
+    <h2>What needs attention</h2>
+    <% attention.forEach(a => { %><a class="alert <%= a.level %>" style="display:block;text-decoration:none" href="<%= a.href %>"><%= a.text %> →</a><% }) %>
+    <% if (!attention.length) { %><div class="alert ok">All clear — nothing due.</div><% } %>
+  </div>
+</div>
+
+<div class="grid g2 mt">
+  <div class="card">
+    <h2>Personal bests</h2>
+    <div class="grid g2">
+      <% [['Longest flight', bests.longest, x => mins(x.minutes)], ['Highest altitude', bests.highest, x => (+x.maxAlt).toFixed(0) + ' m'],
+          ['Farthest flown', bests.farthest, x => (x.distance / 1000).toFixed(2) + ' km'], ['Top speed', bests.fastest, x => (+x.speed).toFixed(1) + ' m/s']].forEach(([label, x, fmt]) => { %>
+        <div class="stat"><b><%= x ? fmt(x) : '—' %></b><span><%= label %><%= x ? ' · ' + fmtDate(x.date) : '' %></span></div>
+      <% }) %>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Flight time — last 6 months</h2>
+    <div class="row" style="align-items:flex-end;gap:6px;height:110px">
+      <% stats.months.forEach(m => { %><div style="flex:1;text-align:center" title="<%= m.ym %>: <%= mins(m.minutes) %>"><div style="height:<%= Math.max(2, m.minutes / maxM * 80) %>px;background:var(--pri);border-radius:4px 4px 0 0;opacity:<%= m.minutes ? 1 : .25 %>"></div><div class="small muted"><%= m.ym.slice(5) %></div></div><% }) %>
+    </div>
+  </div>
+</div>
+
+<div class="grid g2 mt">
+  <div class="card">
+    <div class="row between"><h2 style="margin:0">My fleet</h2><a class="small" href="/pilot/fleet">Manage fleet</a></div>
+    <div class="tbl-wrap mt"><table><tr><th>Drone / battery</th><th>Flights</th><th>Time / cycles</th><th>Last used</th><th>Status</th></tr>
+      <% f.all.filter(a => a.status !== 'retired').slice(0, 8).forEach(a => { %><tr><td><a href="/pilot/fleet/<%= a.id %>"><b><%= a.name %></b></a> <span class="small muted"><%= a.type %></span></td><td><%= a.flights %></td>
+        <td><%= a.type === 'drone' ? mins(a.minutes) : a.cycles + (a.max_cycles ? ' / ' + a.max_cycles : '') %></td><td><%= a.last_used || '—' %></td><td><span class="pill <%= a.status %>"><%= a.status %></span></td></tr><% }) %>
+      <% if (!f.all.length) { %><tr><td colspan="5" class="empty">Add your drones and batteries to track hours and cycles. <a href="/pilot/fleet">Add now</a></td></tr><% } %>
+    </table></div>
+  </div>
+  <div class="card">
+    <div class="row between"><h2 style="margin:0">Recent flights</h2><a class="small" href="/pilot/logbook">Open logbook</a></div>
+    <div class="tbl-wrap mt"><table><tr><th>Date</th><th>Activity</th><th>Type</th><th>Time</th><th></th></tr>
+      <% recent.forEach(x => { %><tr><td class="nowrap"><%= x.date %></td><td><%= x.activity %></td><td><span class="pill"><%= x.kind %></span></td><td><%= mins(x.minutes) %></td>
+        <td><% if (x.track) { %><a class="btn sm" href="/flights/<%= x.track %>">3D</a><% } %></td></tr><% }) %>
+      <% if (!recent.length) { %><tr><td colspan="5" class="empty">No flights yet.</td></tr><% } %>
+    </table></div>
+  </div>
+</div>
+
+<div class="card mt">
+  <h2>Quick actions</h2>
+  <div class="row" style="flex-wrap:wrap">
+    <a class="btn" href="/flights">⬆ Upload a flight log</a>
+    <a class="btn" href="/pilot/logbook#add">✎ Add a manual entry</a>
+    <a class="btn" href="/pilot/fleet">🛸 Add a drone or battery</a>
+    <a class="btn" href="/simulator">🎮 Practice in the simulator</a>
+    <a class="btn" href="/pilot/live">📡 Live monitor</a>
+    <a class="btn" href="/pilot/logbook?book=maintenance">🔧 Maintenance log</a>
+    <a class="btn" href="/pilot/tutorials">▶ Tutorials</a>
+  </div>
+</div>
+<%- include('../partials/end') %>

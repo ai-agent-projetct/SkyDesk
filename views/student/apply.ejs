@@ -1,0 +1,23 @@
+<%- include('../partials/app', { title: 'Apply' }) %>
+<% const list = rptoFilter ? batches.filter(b => String(b.rpto_id) === String(rptoFilter)) : batches;
+   const rptos = [...new Map(batches.map(b => [b.rpto_id, `${b.rpto_name} · ${b.city || ''}`])).entries()].sort((a, b) => a[1].localeCompare(b[1])); %>
+<div class="page-head"><div><h1>Open batches</h1><div class="muted">Batches currently accepting applications at approved RPTOs.</div></div>
+  <form method="get" action="/student/apply"><select name="rpto" onchange="this.form.submit()" aria-label="Filter by RPTO">
+    <option value="">All RPTOs (<%= batches.length %> batches)</option>
+    <% rptos.forEach(([id, name]) => { %><option value="<%= id %>" <%= String(id) === String(rptoFilter) ? 'selected' : '' %>><%= name %></option><% }) %>
+  </select><noscript><button class="btn sm">Filter</button></noscript></form></div>
+<% if (current) { %><div class="alert warn">You already have an active application (<%= current.status %>) with <%= current.rpto_name %>. Withdraw it from <a href="/student">My training</a> to apply elsewhere.</div><% } %>
+<div class="grid g3">
+  <% list.forEach(b => { %>
+  <div class="card">
+    <b style="font-size:16px"><%= b.title %></b>
+    <div class="small muted"><%= b.rpto_name %> · <%= b.city %></div>
+    <p class="small"><%= b.certificate %> · <%= b.rpas_class %> <%= b.rpas_category %> · <%= b.delivery === 'hybrid' ? 'Hybrid (theory online)' : 'On-site' %><br>
+      Starts <%= fmtDate(b.start_date) %><%= b.fee > 0 ? ' · Fee ' + money(b.fee) + (+b.gst_percent ? ` + ${+b.gst_percent}% GST` : '') : '' %></p>
+    <div class="row between"><span class="pill <%= b.seats_left > 0 ? 'ok' : 'bad' %>"><%= b.seats_left > 0 ? b.seats_left + ' seats left' : 'Full' %></span>
+      <form method="post" action="/student/apply/<%= b.id %>" data-confirm="Apply to <%= b.title %> at <%= b.rpto_name %>?"><button class="btn pri sm" <%= current || b.seats_left <= 0 ? 'disabled' : '' %>>Apply</button></form></div>
+  </div>
+  <% }) %>
+  <% if (!list.length) { %><div class="card empty">No batches are open right now. Check back soon.</div><% } %>
+</div>
+<%- include('../partials/end') %>

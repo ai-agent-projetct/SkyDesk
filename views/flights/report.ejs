@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Flight report — <%= t.original_name %></title>
+<style>
+body{font:13px/1.45 system-ui,"Segoe UI",sans-serif;color:#0f172a;background:#f1f5f9;margin:0}
+.doc{max-width:960px;margin:20px auto;background:#fff;padding:28px;border-radius:8px}
+h1{font-size:20px;margin:0}h2{font-size:15px;margin:22px 0 8px}.muted{color:#64748b}
+.head{display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid #0f172a;padding-bottom:10px}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.kv div{border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px}.kv b{display:block;font-size:15px}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left;vertical-align:top}th{background:#f8fafc}
+.ok{color:#047857}.warn{color:#b45309}.bad{color:#b91c1c}.info{color:#1d4ed8}
+.figs{display:grid;grid-template-columns:1fr 1fr;gap:12px}svg{width:100%;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc}
+@media print{body{background:#fff}.doc{margin:0;padding:0}.noprint{display:none}h2{break-after:avoid}table,svg{break-inside:avoid}}
+</style></head><body>
+<% const A = t.analysis || {}, S = A.summary || {}, pts = t.points || [], fmtS = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+   const lat0 = pts[0][1], lon0 = pts[0][2], kx = 111320 * Math.cos(lat0 * Math.PI / 180);
+   const xy = pts.map(p => [(p[2] - lon0) * kx, (p[1] - lat0) * 110540]), xs = xy.map(v => v[0]), ys = xy.map(v => v[1]);
+   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys), span = Math.max(maxX - minX, maxY - minY, 10), W = 400, pad = 20;
+   const sx = x => pad + (x - minX) / span * (W - 2 * pad), sy = y => W - pad - (y - minY) / span * (W - 2 * pad);
+   const track = xy.map((v, i) => `${i ? 'L' : 'M'}${sx(v[0]).toFixed(1)},${sy(v[1]).toFixed(1)}`).join('');
+   const maxA = Math.max(1, ...pts.map(p => p[3] || 0)), dur = t.duration_s || 1;
+   const prof = pts.map((p, i) => `${i ? 'L' : 'M'}${(p[0] / dur * 400).toFixed(1)},${(190 - (p[3] || 0) / maxA * 170).toFixed(1)}`).join(''); %>
+<div class="doc">
+  <div class="noprint" style="margin-bottom:12px"><button onclick="print()">Print / Save as PDF</button></div>
+  <div class="head">
+    <div><h1>Flight report</h1><div class="muted"><%= t.original_name %> · <%= t.format %> · uploaded <%= fmtDate(t.created_at) %></div></div>
+    <div style="text-align:right"><b><%= t.pilot %></b><div class="muted"><%= fmtDate(t.started_at || t.created_at) %></div>
+      <div class="muted"><%= log ? [log.activity, log.rpas, log.uin].filter(Boolean).join(' · ') : [drone && drone.name, drone && drone.uin, t.exercise, t.place].filter(Boolean).join(' · ') %></div></div>
+  </div>
+  <h2>Summary</h2>
+  <div class="kv">
+    <div><b><%= fmtS(t.duration_s) %></b><span class="muted">Flight time</span></div>
+    <div><b><%= (t.distance_m / 1000).toFixed(2) %> km</b><span class="muted">Distance</span></div>
+    <div><b><%= t.max_alt_m %> m</b><span class="muted">Max altitude (take-off)</span></div>
+    <div><b><%= t.max_speed %> m/s</b><span class="muted">Top speed</span></div>
+    <div><b><%= S.max_home_m ?? '—' %> m</b><span class="muted">Farthest from home</span></div>
+    <div><b><%= S.volt_start != null ? `${S.volt_start} → ${S.volt_end} V` : '—' %></b><span class="muted">Battery</span></div>
+    <div><b><%= S.mah != null ? S.mah + ' mAh' : '—' %></b><span class="muted">Energy used</span></div>
+    <div><b><%= S.vibe_avg != null ? S.vibe_avg + ' m/s²' : '—' %></b><span class="muted">Average vibration</span></div>
+  </div>
+  <div class="figs mt">
+    <div><h2>Track (top view, north up)</h2><svg viewBox="0 0 <%= W %> <%= W %>"><path d="<%= track %>" fill="none" stroke="#1d6fe8" stroke-width="2"/>
+      <circle cx="<%= sx(xy[0][0]) %>" cy="<%= sy(xy[0][1]) %>" r="6" fill="#059669"/><circle cx="<%= sx(xy.at(-1)[0]) %>" cy="<%= sy(xy.at(-1)[1]) %>" r="6" fill="#dc2626"/>
+      <text x="8" y="<%= W - 6 %>" font-size="11" fill="#64748b"><%= Math.round(span) %> m across · green = take-off, red = landing</text></svg></div>
+    <div><h2>Altitude profile</h2><svg viewBox="0 0 400 210"><path d="<%= prof %>" fill="none" stroke="#1d6fe8" stroke-width="2"/>
+      <line x1="0" y1="190" x2="400" y2="190" stroke="#94a3b8"/><text x="4" y="16" font-size="11" fill="#64748b"><%= maxA.toFixed(0) %> m</text><text x="350" y="205" font-size="11" fill="#64748b"><%= fmtS(dur) %></text></svg></div>
+  </div>
+  <% if ((A.checks || []).length) { %><h2>Flight health</h2>
+  <table><tr><th>Area</th><th>Result</th><th>Details</th><th>Advice</th></tr>
+    <% A.checks.forEach(c => { %><tr><td><%= c.area %></td><td class="<%= c.status %>"><b><%= { ok: 'OK', warn: 'Check', bad: 'Problem', info: 'Note' }[c.status] %></b></td><td><%= c.value %></td><td><%= c.advice %></td></tr><% }) %></table><% } %>
+  <% const mt = Object.entries(S.modeTime || {}); if (mt.length) { %><h2>Flight modes</h2>
+  <table><tr><th>Mode</th><th>Time</th><th>Share</th></tr><% mt.sort((a, b) => b[1] - a[1]).forEach(([m, s]) => { %><tr><td><%= m %></td><td><%= fmtS(s) %></td><td><%= Math.round(s / dur * 100) %>%</td></tr><% }) %></table><% } %>
+  <% if (A.pid) { %><h2>PID copilot</h2>
+  <table><tr><th>Axis</th><th>Verdict</th><th>Error / demand</th><th>Suggested changes</th></tr>
+    <% A.pid.forEach(a => { %><tr><td><%= a.axis %></td><td><%= a.verdict %></td><td><%= a.rms %> / <%= a.demand %> °/s, lag <%= a.lag_ms %> ms</td>
+      <td><%= a.params.filter(p => p.suggested != null && p.suggested !== p.current).map(p => `${p.name} ${p.current} → ${p.suggested}`).join(', ') || '—' %></td></tr><% }) %></table>
+  <p class="muted">Suggestions only — change in small steps and test-fly safely.</p><% } %>
+  <p class="muted" style="margin-top:28px">Pilot signature: ____________________ &nbsp;&nbsp;&nbsp; Reviewed by: ____________________</p>
+</div>
+</body></html>

@@ -1,0 +1,96 @@
+<%- include('../partials/app', { title: rpto.name }) %>
+<div class="page-head">
+  <div><a href="/super/rptos" class="small">← RPTOs</a><h1><%= rpto.name %> <span class="pill <%= rpto.status %>"><%= rpto.status %></span></h1>
+    <div class="muted"><%= rpto.city %> · registered <%= fmtDate(rpto.created_at) %><%= rpto.approved_at ? ' · approved ' + fmtDate(rpto.approved_at) : '' %></div>
+    <% if (rpto.status_note) { %><div class="small muted">Note: <%= rpto.status_note %></div><% } %>
+  </div>
+</div>
+<div class="grid g2">
+  <div class="card">
+    <h2>Decision</h2>
+    <p class="muted small">Approving activates the RPTO's portal for its admins, staff and trainees and locks the official details.</p>
+    <form method="post" action="/super/rptos/<%= rpto.id %>/status">
+      <div class="field"><label>Note (shown to the RPTO)</label><input name="note" placeholder="e.g. Please re-upload a clearer authorisation certificate"></div>
+      <div class="row">
+        <% if (rpto.status !== 'approved') { %><button class="btn ok" name="status" value="approved">Approve & activate</button><% } %>
+        <% if (rpto.status === 'pending') { %><button class="btn bad" name="status" value="rejected">Reject</button><% } %>
+        <% if (rpto.status === 'approved') { %><button class="btn bad" name="status" value="suspended" data-confirm="Suspend this RPTO? All its users lose portal access.">Suspend</button><% } %>
+      </div>
+    </form>
+    <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+    <form method="post" action="/super/rptos/<%= rpto.id %>/settings" class="row">
+      <div class="field"><label>Staff login limit</label><input type="number" name="staff_limit" min="1" value="<%= rpto.staff_limit %>" style="width:120px"></div>
+      <label class="row" style="font-weight:500"><input type="checkbox" name="about_locked" value="1" <%= rpto.about_locked ? 'checked' : '' %>> Lock official details</label>
+      <button class="btn">Save</button>
+    </form>
+    <% if (T.CREDIT_PRICE || T.PARTNER_SHARE) { %>
+    <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+    <h3>Billing</h3>
+    <% if (T.CREDIT_PRICE) { %>
+      <div class="row"><span class="pill <%= rpto.credits > 0 ? 'ok' : 'warn' %>"><%= rpto.credits %> completion credits</span></div>
+      <form method="post" action="/super/rptos/<%= rpto.id %>/credits" class="row mt">
+        <div class="field"><label>Add (+) or remove (−) credits</label><input type="number" name="delta" value="10" style="width:120px"></div>
+        <div class="field grow"><label>Note</label><input name="note" placeholder="e.g. Launch offer / offline payment ref."></div>
+        <button class="btn">Apply</button>
+      </form>
+      <details><summary class="small">Recent credit history</summary>
+        <div class="tbl-wrap mt"><table><tr><th>Date</th><th>Change</th><th>Reason</th><th>Note</th><th>By</th></tr>
+          <% ledger.forEach(l => { %><tr><td class="small"><%= fmtDate(l.created_at) %></td><td><%= l.delta > 0 ? '+' : '' %><%= l.delta %></td><td><span class="pill"><%= l.reason %></span></td><td class="small"><%= l.note || '' %></td><td class="small"><%= l.by_name || '' %></td></tr><% }) %>
+          <% if (!ledger.length) { %><tr><td colspan="5" class="empty">No credit activity.</td></tr><% } %>
+        </table></div>
+      </details>
+    <% } %>
+    <% if (T.PARTNER_SHARE && earnDue > 0) { %>
+      <form method="post" action="/super/rptos/<%= rpto.id %>/earnings-paid" class="row mt" data-confirm="Mark <%= money(earnDue / 100) %> as paid to this RPTO?">
+        <span>Partner earnings due: <b><%= money(earnDue / 100) %></b></span><button class="btn sm ok">Mark paid</button></form>
+    <% } %>
+    <% } %>
+  </div>
+  <div class="card">
+    <h2>Details</h2>
+    <table>
+      <tr><th>Authorisation no.</th><td><%= rpto.auth_no || '—' %></td></tr>
+      <tr><th>File no.</th><td><%= rpto.file_no || '—' %></td></tr>
+      <tr><th>Accountable Manager</th><td><%= rpto.accountable_manager || '—' %></td></tr>
+      <tr><th>Contact</th><td><%= rpto.contact_email || '' %> <%= rpto.contact_phone || '' %></td></tr>
+      <tr><th>Address</th><td><%= rpto.address || '—' %></td></tr>
+      <tr><th>Totals</th><td><%= k.trainees %> trainees · <%= k.certs %> certificates · <%= k.assets %> assets</td></tr>
+    </table>
+  </div>
+</div>
+<div class="card mt">
+  <h2>Documents</h2>
+  <div class="tbl-wrap"><table>
+    <tr><th>Document</th><th>File</th><th>Uploaded</th></tr>
+    <% Object.entries(L.RPTO_DOCS).forEach(([k, label]) => { const d = docs.find(x => x.doc_type === k); %>
+      <tr><td><%= label %><%= L.RPTO_DOCS_REQUIRED.includes(k) ? ' *' : '' %></td>
+        <td><% if (d) { %><a href="/files/<%= d.file %>" target="_blank"><%= d.original_name || 'View' %></a><% } else { %><span class="pill <%= L.RPTO_DOCS_REQUIRED.includes(k) ? 'bad' : '' %>">missing</span><% } %></td>
+        <td><%= d ? fmtDate(d.uploaded_at) : '—' %></td></tr>
+    <% }) %>
+  </table></div>
+</div>
+<div class="grid g2 mt">
+  <div class="card">
+    <h2>Staff (<%= members.length %> / <%= rpto.staff_limit %>)</h2>
+    <div class="tbl-wrap"><table>
+      <tr><th>Name</th><th>Roles</th><th>Status</th><th></th></tr>
+      <% members.forEach(m => { %>
+        <tr><td><%= m.name %><div class="small muted"><%= m.email %></div></td><td><%= m.roles %></td><td><span class="pill <%= m.active ? 'ok' : 'bad' %>"><%= m.active ? 'active' : 'disabled' %></span></td>
+          <td class="right nowrap">
+            <form class="inline" method="post" action="/super/users/<%= m.id %>/password" data-confirm="Generate a new password for <%= m.email %>?"><button class="btn sm">Reset password</button></form>
+            <form class="inline" method="post" action="/super/users/<%= m.id %>/toggle"><button class="btn sm"><%= m.active ? 'Disable' : 'Enable' %></button></form>
+          </td></tr>
+      <% }) %>
+    </table></div>
+  </div>
+  <div class="card">
+    <h2>Batches</h2>
+    <div class="tbl-wrap"><table>
+      <tr><th>Batch</th><th>Status</th><th>Admitted</th><th>Dates</th></tr>
+      <% batches.forEach(b => { %><tr><td><%= b.title %></td><td><span class="pill <%= b.status %>"><%= b.status %></span></td><td><%= b.admitted %> / <%= b.seats %></td><td class="small"><%= fmtDate(b.start_date) %> – <%= fmtDate(b.end_date) %></td></tr><% }) %>
+      <% if (!batches.length) { %><tr><td colspan="4" class="empty">No batches yet.</td></tr><% } %>
+    </table></div>
+    <a class="btn sm mt" href="/super/users?rpto=<%= rpto.id %>">View all users of this RPTO</a>
+  </div>
+</div>
+<%- include('../partials/end') %>

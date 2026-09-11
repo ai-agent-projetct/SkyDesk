@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Certificate <%= a.cert_no %></title>
+<style>
+@page{size:A4 landscape;margin:12mm}
+body{font:15px/1.5 Georgia,"Times New Roman",serif;color:#0f172a;background:#f1f5f9;margin:0}
+.wrap{max-width:1050px;margin:20px auto;background:#fff;padding:24px}
+.cert{border:10px double <%= rpto.brand_color || '#1e3a8a' %>;padding:40px 50px;text-align:center}
+.cert h1{font-size:36px;color:<%= rpto.brand_color || '#1e3a8a' %>;margin:6px 0 2px;letter-spacing:.04em}
+.name{font-size:30px;font-weight:bold;border-bottom:1px solid #94a3b8;display:inline-block;padding:0 30px 4px;margin:10px 0}
+.meta{display:flex;justify-content:space-between;margin-top:36px;align-items:flex-end;text-align:center}
+.meta div{min-width:200px}.small{font-size:12px;color:#475569}.noprint{margin-bottom:12px;font-family:system-ui}
+@media print{body{background:#fff}.wrap{margin:0;padding:0}.noprint{display:none}}
+</style></head><body>
+<div class="wrap">
+  <div class="noprint"><button onclick="print()">Print / Save as PDF</button></div>
+  <div class="cert">
+    <% if (rpto.logo) { %><img src="/files/<%= rpto.logo %>" alt="" style="max-height:80px"><% } %>
+    <div style="font-size:20px;font-weight:bold;margin-top:6px"><%= rpto.name %></div>
+    <div class="small"><%= rpto.address || rpto.city %><%= rpto.auth_no ? ' · RPTO Authorisation No. ' + rpto.auth_no : '' %></div>
+    <h1>CERTIFICATE OF COMPLETION</h1>
+    <div class="small">Remote Pilot Training Course</div>
+    <p style="margin-top:22px">This is to certify that</p>
+    <div class="name"><%= u.name %></div>
+    <% if (rpto.tagline) { %><div class="small" style="font-style:italic"><%= rpto.tagline %></div><% } %>
+    <p><%= u.father_name ? 'son/daughter of ' + u.father_name + ', ' : '' %>Roll No. <b><%= a.roll_no || '—' %></b>, has successfully completed the
+      <b><%= batch.certificate %></b> remote pilot training for <b><%= batch.rpas_class %> <%= batch.rpas_category %></b> RPAS
+      (<%= batch.title %>), from <b><%= fmtDate(batch.start_date) %></b> to <b><%= fmtDate(batch.end_date) %></b>, including ground school, simulator and practical flying training and assessments.</p>
+    <div class="meta">
+      <div><div class="small">Certificate No.</div><b><%= a.cert_no %></b><div class="small">Issued <%= fmtDate(a.cert_issued_at) %></div></div>
+      <% if (trainer) { %><div><% if (trainer.signature) { %><img src="/files/<%= trainer.signature %>" alt="" style="max-height:60px"><br><% } %>
+        <b><%= trainer.name %></b><div class="small">RPA Trainer</div></div><% } %>
+      <div><% if (rpto.stamp) { %><img src="/files/<%= rpto.stamp %>" alt="" style="max-height:90px"><% } %></div>
+      <div><% if (rpto.signature) { %><img src="/files/<%= rpto.signature %>" alt="" style="max-height:60px"><br><% } %>
+        <b><%= rpto.accountable_manager || '' %></b><div class="small">Accountable Manager</div></div>
+    </div>
+  </div>
+</div>
+</body></html>

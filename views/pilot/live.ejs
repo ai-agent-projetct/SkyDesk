@@ -1,0 +1,41 @@
+<%- include('../partials/app', { title: 'Live monitor' }) %>
+<div class="page-head">
+  <div><h1>Live monitor</h1><div class="muted">Watch live telemetry from your drone on this screen and save the flight to your logbook. <b>Monitor only</b> — nothing here can command the aircraft.</div></div>
+</div>
+<div class="card mb">
+  <div class="row" style="align-items:flex-end;flex-wrap:wrap">
+    <div class="field grow"><label>mavlink2rest address</label><input id="url" value="http://127.0.0.1:8088" spellcheck="false"></div>
+    <div class="field" style="width:110px"><label>Vehicle ID</label><input id="sys" type="number" min="1" max="255" value="1"></div>
+    <div class="field"><button class="btn pri" id="connect">Connect</button></div>
+    <div class="field"><button class="btn" id="demo">Demo flight</button></div>
+    <div class="field"><button class="btn" id="stop" disabled>Stop</button></div>
+    <div class="field"><button class="btn ok" id="save" disabled>Save flight</button></div>
+  </div>
+  <div class="small muted" id="status">Not connected.</div>
+  <details class="small mt"><summary>How to connect</summary>
+    <p>Run <a href="https://github.com/mavlink/mavlink2rest" target="_blank" rel="noopener">mavlink2rest</a> on this computer, pointed at your ground station or telemetry radio, for example <code>mavlink2rest -c udpin:0.0.0.0:14550</code>, then press Connect.
+      The page only <b>reads</b> messages (position, altitude, speed, battery, GPS, mode). Keep your ground control station open for control.</p>
+  </details>
+</div>
+<div class="grid g2">
+  <div class="card" style="padding:0;overflow:hidden"><canvas id="map" style="width:100%;height:420px;display:block;background:#0b1324"></canvas></div>
+  <div>
+    <div class="grid g3">
+      <div class="stat"><b id="vArm">—</b><span>Armed</span></div>
+      <div class="stat"><b id="vMode">—</b><span>Flight mode</span></div>
+      <div class="stat"><b id="vTime">0:00</b><span>Flight time</span></div>
+      <div class="stat info"><b id="vAlt">—</b><span>Altitude (rel.)</span></div>
+      <div class="stat"><b id="vClimb">—</b><span>Climb rate</span></div>
+      <div class="stat"><b id="vSpd">—</b><span>Ground speed</span></div>
+      <div class="stat"><b id="vHdg">—</b><span>Heading</span></div>
+      <div class="stat"><b id="vDist">—</b><span>From home</span></div>
+      <div class="stat"><b id="vGps">—</b><span>GPS</span></div>
+      <div class="stat"><b id="vBat">—</b><span>Battery</span></div>
+      <div class="stat"><b id="vCur">—</b><span>Current</span></div>
+      <div class="stat"><b id="vPts">0</b><span>Points recorded</span></div>
+    </div>
+    <div class="alert warn mt" id="warn" hidden></div>
+  </div>
+</div>
+<script src="/static/live.js?v=<%= v %>"></script>
+<%- include('../partials/end') %>

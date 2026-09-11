@@ -1,0 +1,23 @@
+<%- include('../partials/app', { title: 'Add RPTO' }) %>
+<div class="page-head"><div><a href="/super/rptos" class="small">← RPTOs</a><h1>Add RPTO</h1><div class="muted">Create an approved RPTO and its Accountable Manager login directly.</div></div></div>
+<% if (error) { %><div class="alert bad"><%= error %></div><% } %>
+<form class="card" method="post" style="max-width:820px">
+  <h3>Organisation</h3>
+  <div class="fields">
+    <div class="field"><label>RPTO name *</label><input name="name" value="<%= b.name || '' %>" required></div>
+    <div class="field"><label>City *</label><input name="city" value="<%= b.city || '' %>" required></div>
+    <div class="field"><label>Authorisation no.</label><input name="auth_no" value="<%= b.auth_no || '' %>"></div>
+    <div class="field"><label>File no.</label><input name="file_no" value="<%= b.file_no || '' %>"></div>
+    <div class="field"><label>Staff login limit</label><input type="number" name="staff_limit" value="<%= b.staff_limit || 30 %>" min="1"></div>
+  </div>
+  <div class="field"><label>Address</label><textarea name="address" rows="2"><%= b.address || '' %></textarea></div>
+  <h3 class="mt">Accountable Manager login</h3>
+  <div class="fields">
+    <div class="field"><label>Name *</label><input name="am_name" value="<%= b.am_name || '' %>" required></div>
+    <div class="field"><label>Email *</label><input type="email" name="email" value="<%= b.email || '' %>" required></div>
+    <div class="field"><label>Mobile</label><input name="phone" value="<%= b.phone || '' %>"></div>
+    <div class="field"><label>Password (blank = generate)</label><input name="password" type="text" autocomplete="off"></div>
+  </div>
+  <button class="btn pri">Create RPTO</button>
+</form>
+<%- include('../partials/end') %>

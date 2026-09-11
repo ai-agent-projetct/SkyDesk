@@ -1,0 +1,162 @@
+<%- include('../partials/site', { title: 'Drone pilot training & logbooks', bodyClass: 'home3d',
+  extraHead: `<link rel="stylesheet" href="/static/home.css?v=${v}"><script type="importmap">{"imports":{"three":"/vendor/three/three.module.js"}}</script>` }) %>
+<%# Scroll-driven 3D homepage. Spec: docs/3d-homepage-prompt.md. The drone's poses come from the data-drone / data-drone-at markers below. %>
+<div class="sky sky-day" aria-hidden="true"></div>
+<div class="sky sky-night" aria-hidden="true"></div>
+<div class="sky sky-replay" aria-hidden="true"></div>
+<canvas id="scene3d" aria-hidden="true"></canvas>
+
+<main id="top">
+  <!-- 1. Hero -->
+  <section class="h-hero">
+    <div class="clouds" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    <span class="badge">● For DGCA-authorised RPTOs and their pilots</span>
+    <h1>Train pilots. Log every flight.<br><em>One sky, one platform.</em></h1>
+    <p class="lead">Admissions, batches, tests and certificates for drone schools — logbooks, 3D flight replays and a practice simulator for every pilot they train.</p>
+    <div class="cta">
+      <a class="btn pri lg" href="/register-rpto">Register your RPTO →</a>
+      <a class="btn glass lg" href="/register">I'm a pilot</a>
+    </div>
+    <div class="drone-spot" data-drone-at="1,-25,0"></div>
+    <div class="stats">
+      <div><b><%= stats.rptos %></b><span>RPTOs onboarded</span></div>
+      <div><b><%= stats.students %></b><span>Pilots training</span></div>
+      <div><b><%= stats.certs %></b><span>Certificates issued</span></div>
+    </div>
+    <svg class="ribbon" viewBox="0 0 400 600" preserveAspectRatio="none" aria-hidden="true"><path d="M380 0 C 250 160, 420 300, 180 420 S 40 560, 0 600" /></svg>
+  </section>
+
+  <!-- 2. 3D replay (pinned stage) -->
+  <section id="replay" class="h-replay" data-replay>
+    <div class="stage">
+      <div class="stage-copy">
+        <span class="eyebrow">● 3D flight replay</span>
+        <h2>Relive any flight from five camera angles.</h2>
+        <p>Upload an ArduPilot <b>.bin</b> or <b>.log</b>, a PX4 <b>.ulg</b> or a CSV export. SkyDesk rebuilds it in 3D, with graphs, flight-health checks, PID tuning hints and a printable report.</p>
+        <div class="chips"><span>ArduPilot (.bin / .log)</span><span>PX4 (.ulg)</span><span>CSV / DJI exports</span></div>
+      </div>
+      <div class="hud" aria-hidden="true">
+        <div class="hud-top"><span class="rec">● REC</span> <span id="hudMode">FPV</span> · <span id="hudTime">T+00:00</span></div>
+        <div class="hud-hdg" id="hudHdg">000</div>
+        <div class="hud-l"><small>SPD km/h</small><b id="hudSpd">0</b><small id="hudThr">THR 0%</small></div>
+        <div class="hud-r"><small>ALT m</small><b id="hudAlt">0</b><small id="hudVs">V/S 0.0</small></div>
+        <div class="hud-bot"><span id="hudBat">BATT 100%</span><span>SATS 14</span><span id="hudPos">13.0827 N · 80.2707 E</span><span class="ok">● LINK OK</span></div>
+        <div class="hud-cross"></div>
+      </div>
+      <div class="captions">
+        <% [['Follow', 'Behind and above — the aircraft and where it is heading, always in frame.'],
+            ['Chase', 'Low and close, like a camera car tracking the flight.'],
+            ['Top', 'Straight down: the whole route, and how tight each turn really was.'],
+            ['Side', 'In profile: climbs, descents and how steady the height hold was.'],
+            ['FPV', "The pilot's eye, with speed, height and battery on screen."]].forEach(([k, t], i) => { %>
+          <div class="cap" data-cap="<%= i %>"><b>0<%= i + 1 %></b> <strong><%= k %></strong><p><%= t %></p></div>
+        <% }) %>
+      </div>
+      <div class="pills"><% ['Follow', 'Chase', 'Top', 'Side', 'FPV'].forEach((k, i) => { %><span data-pill="<%= i %>"><%= k %></span><% }) %></div>
+      <noscript><p class="stage-fallback">Camera views: Follow, Chase, Top, Side and FPV.</p></noscript>
+    </div>
+  </section>
+
+  <!-- 3. For RPTOs -->
+  <section id="rpto" class="h-sec">
+    <span class="eyebrow">● For RPTOs</span>
+    <h2>Everything your training school runs on</h2>
+    <p class="sub">From the first enquiry to the RPC number — every step hands off to the next, so a trainee's record is complete the day they finish.</p>
+    <div class="cards c4">
+      <div class="card3"><i>📝</i><b>Admissions & documents</b><p>Enquiries, applications, consent, document checks and the 18–65 rule before a seat and roll number are confirmed.</p></div>
+      <div class="card3"><i>🗓️</i><b>Auto-scheduled batches</b><p>One click builds ground classes, per-trainee simulator and flying slots and tests — then drag them on a timeline.</p></div>
+      <div class="card3"><i>📈</i><b>Per-trainee progress</b><p>Mark classes done, slide each trainee's flying progress and drop their flight logs straight onto the slot.</p></div>
+      <div class="card3"><i>✅</i><b>Tests your way</b><p>Online theory from your bank, the browser simulator test, practical marking with evidence, or printed OMR sheets.</p></div>
+      <div class="card3"><i>🎓</i><b>Certificates & RPC</b><p>Signed by the RPA trainer, numbered automatically, with a ZIP record package ready for submission.</p></div>
+      <div class="card3"><i>💳</i><b>CRM & fees</b><p>Lead pipeline and follow-ups, course fees with GST, part payments and numbered receipts.</p></div>
+      <div class="card3"><i>🛠️</i><b>Assets & logbooks</b><p>RPAS, batteries, chargers, simulators and fields — flight, battery, maintenance and incident logbooks.</p></div>
+      <div class="card3"><i>👥</i><b>Staff & roles</b><p>Accountable Manager, Admin, Instructor and Sales, each seeing exactly what their role needs.</p></div>
+    </div>
+    <div class="perch" data-drone-at="0.42,35,0.2"></div>
+  </section>
+
+  <!-- 4. For pilots -->
+  <section id="pilots" class="h-sec night" data-sky="night">
+    <span class="eyebrow">● For pilots</span>
+    <h2>Your flying career, logged for you</h2>
+    <p class="sub">Every training flight from your school and every log you upload lands in one pilot logbook — with totals, currency and licence reminders.</p>
+    <div class="split">
+      <div class="mock">
+        <div class="mock-head"><b>Pilot hub</b><span>Karthik R. · RPC valid to 2031</span></div>
+        <div class="kpis"><div><b>42h 10m</b><span>Flight time</span></div><div><b>128</b><span>Flights</span></div><div><b class="ok">Current</b><span>3 in 90 days</span></div><div><b>3 · 6</b><span>Drones · packs</span></div></div>
+        <div class="bars-label">Flight time — last 6 months <span class="ok">+18%</span></div>
+        <div class="bars" data-drone-at="0.5,-30,0.25"><% [38, 52, 44, 70, 61, 88].forEach(h => { %><i style="height:<%= h %>%"></i><% }) %></div>
+        <div class="mock-list">
+          <div><span>Survey lap — Beach</span><em>18 min · Personal</em></div>
+          <div><span>F12 Climbs & descents</span><em>15 min · Training</em></div>
+          <div><span>Figure-8 practice</span><em>11 min · Manual</em></div>
+        </div>
+      </div>
+      <ul class="ticks">
+        <li><b>Four logbooks.</b> Pilot, per-drone, battery cycles and maintenance — print or export any of them.</li>
+        <li><b>Your own fleet.</b> Hours per drone, cycles per battery, and a nudge before maintenance falls due.</li>
+        <li><b>Add to logbook from the replay.</b> Pick the drone, battery and exercise once — the log fills in the rest.</li>
+        <li><b>Live monitor.</b> Watch telemetry from your ground station on any screen and save the flight. Read-only by design.</li>
+        <li><b>Tutorials.</b> Short guides from the platform team, with questions and answers underneath.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 5. Simulator -->
+  <section id="simulator" class="h-sec night" data-sky="night">
+    <span class="eyebrow">● Practice simulator</span>
+    <h2>Practise before you fly — right in the browser</h2>
+    <p class="sub">Keyboard or a USB transmitter. Real flight-mode behaviour, drills that score themselves, and a coach that talks you through it.</p>
+    <div class="cards c3">
+      <div class="card3"><i>🧭</i><b>Real flight modes</b><p>Loiter holds position, AltHold holds only height, Stabilize holds nothing — feel the difference safely.</p></div>
+      <div class="card3"><i>🔋</i><b>Arming & failsafes</b><p>Arm with the stick gesture, take off, return home — and a low battery brings you back on its own.</p></div>
+      <div class="card3"><i>🎯</i><b>Scored drills</b><p>Hover and land, square, figure-8, an agri spray field with coverage, and an FPV gate course.</p></div>
+      <div class="card3" data-drone="-0.55,0.1,0.3,-40"><i>👀</i><b>Watch, then fly</b><p>An autopilot flies each drill first. Replay your own attempt afterwards with the flight path drawn in.</p></div>
+      <div class="card3"><i>🗣️</i><b>Voice coaching</b><p>Spoken prompts in English and ten Indian languages, from Hindi and Tamil to Odia and Punjabi.</p></div>
+      <div class="card3"><i>🛸</i><b>Fly like your drone</b><p>Pick a profile built from your own uploaded flights, so practice matches the aircraft you actually fly.</p></div>
+    </div>
+  </section>
+
+  <!-- 6. Pricing -->
+  <section id="pricing" class="h-sec">
+    <span class="eyebrow">● Pricing</span>
+    <h2>Free to start. Pay as you grow.</h2>
+    <div class="cards c3 plans">
+      <div class="card3 plan"><b>Pilot</b><div class="price">₹0<small> forever</small></div>
+        <ul><li>Pilot logbooks & fleet</li><li>3D replay, graphs & health checks</li><li>Practice simulator</li><li>Up to <%= price.free %> flight uploads</li></ul>
+        <a class="btn" href="/register">Create free account</a></div>
+      <div class="card3 plan hot"><b>Pilot Pro</b> <span class="tag">Most flights</span><div class="price">₹<%= price.month.toLocaleString('en-IN') %><small> / month</small></div>
+        <ul><li>Everything in Pilot</li><li>Unlimited flight uploads</li><li>₹<%= price.year.toLocaleString('en-IN') %> a year — two months free</li><li>Certificates free at partner RPTOs</li></ul>
+        <a class="btn pri" href="/register">Go Pro</a>
+        <div class="plan-spot" data-drone-at="0.4,-20,0.12"></div></div>
+      <div class="card3 plan"><b>RPTO</b><div class="price"><%= price.credit ? '₹' + price.credit.toLocaleString('en-IN') : 'Free' %><small><%= price.credit ? ' / certificate' : ' to issue' %></small></div>
+        <ul><li>Unlimited batches and trainees</li><li>Up to 30 staff logins</li><li>Scheduling, tests, certificates & records</li><li>CRM, fees and GST receipts</li></ul>
+        <a class="btn" href="/register-rpto">Register your RPTO</a></div>
+    </div>
+    <p class="note">Prices include GST. RPTOs pay only when they issue a certificate.</p>
+  </section>
+
+  <!-- 7. Portals -->
+  <section id="portals" class="h-sec">
+    <span class="eyebrow">● Portals</span>
+    <h2>One sign-in, the right workspace</h2>
+    <div class="cards c3">
+      <a class="card3 portal" href="/login"><i>🛡️</i><b>Platform admin</b><p>Approve RPTOs, manage users, payments and the default syllabus and question bank.</p></a>
+      <a class="card3 portal" href="/register-rpto"><i>🏫</i><b>RPTO portal</b><p>For accountable managers, admins, instructors and sales staff. Register your school to begin.</p></a>
+      <a class="card3 portal" href="/register"><i>🧑‍✈️</i><b>Pilot portal</b><p>Apply to a batch, follow your training, and keep your own logbooks, fleet and replays.</p></a>
+    </div>
+  </section>
+</main>
+
+<!-- 8. Footer with the landing pad -->
+<footer class="h-foot">
+  <div class="foot-grid">
+    <div><b class="foot-logo"><%= appName %><span>.</span></b><p>Training management for drone schools, and a logbook for every pilot they train.</p></div>
+    <div><h4>Portals</h4><a href="/login">Log in</a><a href="/register-rpto">Register an RPTO</a><a href="/register">Pilot sign-up</a><a href="/rptos">Find an RPTO</a></div>
+    <div class="pad-wrap"><div class="pad" data-drone-at="0.5,0,0,land"><span>H</span></div></div>
+  </div>
+  <div class="foot-base">© <%= new Date().getFullYear() %> <%= appName %></div>
+</footer>
+<script type="module" src="/static/home3d.js?v=<%= v %>"></script>
+</body>
+</html>

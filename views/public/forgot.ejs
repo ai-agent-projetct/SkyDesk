@@ -1,0 +1,19 @@
+<%- include('../partials/site', { title: 'Forgot password' }) %>
+<div class="auth">
+  <div class="card">
+    <h1>Forgot password</h1>
+    <% if (!enabled) { %>
+      <div class="alert warn">Password reset by email isn't set up on this server. Ask your RPTO admin (or the platform admin) to reset your password — they can do it from their portal.</div>
+    <% } else if (sent) { %>
+      <div class="alert ok">If an account exists for that email, a reset link is on its way. It expires in 1 hour.</div>
+    <% } else { %>
+      <p class="muted">Enter your account email and we'll send you a link to set a new password.</p>
+      <form method="post">
+        <div class="field"><label>Email</label><input type="email" name="email" required autofocus></div>
+        <button class="btn pri">Send reset link</button>
+      </form>
+    <% } %>
+    <p class="small mt"><a href="/login">← Back to log in</a></p>
+  </div>
+</div>
+<%- include('../partials/site-end') %>

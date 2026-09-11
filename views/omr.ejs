@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>OMR sheet — <%= t.title %></title>
+<style>
+body{font:12px/1.4 system-ui,"Segoe UI",sans-serif;color:#0f172a;margin:0;background:#f1f5f9}
+.page{background:#fff;max-width:800px;margin:16px auto;padding:28px;break-after:page}
+h1{font-size:18px;margin:0}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin:14px 0}
+.meta div{border-bottom:1px solid #94a3b8;padding:6px 0}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px 14px;margin-top:12px}
+.q{display:flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums}.q b{width:22px;text-align:right}
+.o{width:16px;height:16px;border:1.5px solid #334155;border-radius:50%;display:inline-grid;place-items:center;font-size:9px;color:#475569}
+.marks{display:flex;justify-content:space-between;margin-top:30px}.corner{width:14px;height:14px;background:#000;display:inline-block}
+@media print{body{background:#fff}.page{margin:0;padding:18px}.noprint{display:none}}
+</style></head><body>
+<div class="noprint" style="padding:10px 16px"><button onclick="print()">Print</button> One answer sheet per trainee. Fill one bubble per question with a dark pen.</div>
+<% trainees.forEach(tr => { const n = t.question_count || 50; %>
+<div class="page">
+  <div class="marks" style="margin:0 0 10px"><span class="corner"></span><span class="corner"></span></div>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div><h1><%= rpto.name %></h1><div><%= t.batch_title %> — <%= t.title %> · <%= n %> questions · pass mark <%= t.pass_percent %>%</div></div>
+    <% if (rpto.logo) { %><img src="/files/<%= rpto.logo %>" alt="" style="max-height:50px"><% } %>
+  </div>
+  <div class="meta">
+    <div>Name: <b><%= tr.name %></b></div><div>Roll no.: <b><%= tr.roll_no %></b></div>
+    <div>Date:</div><div>Invigilator signature:</div>
+  </div>
+  <div class="grid">
+    <% for (let i = 1; i <= n; i++) { %><div class="q"><b><%= i %></b><% ['A', 'B', 'C', 'D'].forEach(o => { %><span class="o"><%= o %></span><% }) %></div><% } %>
+  </div>
+  <div style="margin-top:22px">Score: ______ / <%= n %> &nbsp;&nbsp; Checked by: ____________________</div>
+  <div class="marks"><span class="corner"></span><span class="corner"></span></div>
+</div>
+<% }) %>
+</body></html>

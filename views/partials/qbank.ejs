@@ -1,0 +1,30 @@
+<%# Question bank editor. Locals: base (URL prefix), questions, platform (bool), defaults (count of platform questions, RPTO only) %>
+<% if (!platform && !questions.length) { %><div class="alert info">You are using the <b>platform default question bank</b> (<%= defaults %> questions). Upload your own CSV or add a question to switch to your own bank.</div>
+<% } else if (!platform) { %><div class="alert info row between">Tests use <b>your own bank</b> (<%= questions.length %> questions).
+  <form class="inline" method="post" action="<%= base %>/questions/clear" data-confirm="Delete your bank and go back to the platform default?"><button class="btn sm">Use platform default instead</button></form></div><% } %>
+<div class="grid g2">
+  <form class="card" method="post" action="<%= base %>/questions">
+    <h2>Add question</h2>
+    <div class="field"><label>Subject</label><input name="subject" placeholder="e.g. Drone Rules"></div>
+    <div class="field"><label>Question *</label><textarea name="question" rows="2" required></textarea></div>
+    <div class="fields">
+      <% ['a', 'b', 'c', 'd'].forEach(o => { %><div class="field"><label>Option <%= o.toUpperCase() %><%= o < 'c' ? ' *' : '' %></label><input name="<%= o %>" <%= o < 'c' ? 'required' : '' %>></div><% }) %>
+    </div>
+    <div class="field"><label>Correct option</label><select name="correct"><option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option></select></div>
+    <button class="btn pri">Add question</button>
+  </form>
+  <form class="card" method="post" action="<%= base %>/questions/import" enctype="multipart/form-data" data-confirm="This replaces the whole bank with the file's questions. Continue?">
+    <h2>Upload question bank (CSV)</h2>
+    <p class="small muted">Columns: <code>subject, question, a, b, c, d, correct</code> (correct = a/b/c/d). The upload <b>replaces</b> the whole bank; if no row is valid nothing changes.</p>
+    <p class="small"><a href="<%= base %>/questions.csv">Download <%= questions.length ? 'current bank' : 'template (default bank)' %></a> — edit in Excel, save as CSV, upload.</p>
+    <div class="field"><input type="file" name="file" accept=".csv,text/csv" required></div>
+    <button class="btn">Upload & replace</button>
+  </form>
+</div>
+<div class="tbl-wrap mt"><table>
+  <tr><th>#</th><th>Subject</th><th>Question</th><th>Options</th><th>Answer</th><th></th></tr>
+  <% questions.forEach((q, i) => { %><tr><td><%= i + 1 %></td><td class="small"><%= q.subject || '—' %></td><td><%= q.question %></td>
+    <td class="small">A. <%= q.a %><br>B. <%= q.b %><% if (q.c) { %><br>C. <%= q.c %><% } %><% if (q.d) { %><br>D. <%= q.d %><% } %></td><td><b><%= q.correct.toUpperCase() %></b></td>
+    <td><form method="post" action="<%= base %>/questions/<%= q.id %>/delete" data-confirm="Delete this question?"><button class="btn sm bad">×</button></form></td></tr><% }) %>
+  <% if (!questions.length) { %><tr><td colspan="6" class="empty"><%= platform ? 'No default questions yet.' : 'No questions of your own yet.' %></td></tr><% } %>
+</table></div>

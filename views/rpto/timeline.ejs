@@ -1,0 +1,57 @@
+<%- include('../partials/app', { title: 'Timeline · ' + b.title }) %>
+<%
+  const t5 = x => String(x || '').slice(0, 5);
+  const addDays = (d, n) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+  const step = view === 'day' ? 1 : view === 'week' ? 7 : 30;
+  const weekStart = (() => { const x = new Date(date + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() - ((x.getUTCDay() + 6) % 7)); return x.toISOString().slice(0, 10); })();
+  const byDate = d => sessions.filter(s => s.date === d);
+  const tname = id => (trainees.find(t => t.id === id) || {}).name || 'All';
+%>
+<div class="page-head">
+  <div><a class="small" href="/rpto/batches/<%= b.id %>">← <%= b.title %></a><h1>Timeline</h1>
+    <div class="muted">Drag a session to move it · pull a tile's edge to trim or extend · 1-minute steps · later sessions in the same lane shift only on a real overlap · nothing may overlap a shared class, double-book an RPAS / simulator seat, or pass 19:00.</div></div>
+  <div class="row">
+    <% ['day', 'week', 'month'].forEach(v => { %><a class="btn sm <%= view === v ? 'pri' : '' %>" href="?view=<%= v %>&date=<%= date %>"><%= v %></a><% }) %>
+  </div>
+</div>
+<div class="row mb">
+  <a class="btn sm" href="?view=<%= view %>&date=<%= addDays(date, -step) %>">←</a>
+  <form class="inline"><input type="hidden" name="view" value="<%= view %>"><input type="date" name="date" value="<%= date %>" onchange="this.form.submit()" style="width:auto"></form>
+  <a class="btn sm" href="?view=<%= view %>&date=<%= addDays(date, step) %>">→</a>
+  <% if (range.first) { %><span class="small muted">Batch runs <%= range.first %> → <%= range.last %></span><% } %>
+  <span class="grow"></span>
+  <% if (view === 'day') { %>
+    <button class="btn sm" id="undoBtn" disabled>↶ Undo</button>
+    <span class="small">Gap</span><button class="btn sm" id="gapMinus">−</button><b id="gapVal"><%= b.slot_gap_min || 0 %></b><span class="small">min</span><button class="btn sm" id="gapPlus">+</button>
+  <% } %>
+</div>
+<div id="tlMsg" class="small mb" style="min-height:18px"></div>
+
+<% if (view === 'day') { %>
+  <div class="tl" id="tl"></div>
+  <p class="small muted mt">Click a session (without dragging) to open it. <% if (b.records_locked) { %><b>Records are locked — moves are refused.</b><% } %></p>
+  <script type="application/json" id="tlData"><%- JSON.stringify({ batch: b.id, date, gap: b.slot_gap_min || 0, trainees, sessions: byDate(date).map(s => ({ id: s.id, date: s.date, start_time: t5(s.start_time), end_time: t5(s.end_time), type: s.type, code: s.code, title: s.title, status: s.status, trainee_id: s.trainee_id, asset: s.asset, instructor: s.instructor })) }).replace(/</g, '\\u003c') %></script>
+  <script src="/static/timeline.js?v=<%= v %>"></script>
+<% } else if (view === 'week') { %>
+  <div class="grid" style="grid-template-columns:repeat(7,minmax(130px,1fr));overflow-x:auto">
+    <% for (let i = 0; i < 7; i++) { const d = addDays(weekStart, i), list = byDate(d); %>
+      <div class="card" style="padding:10px"><a href="?view=day&date=<%= d %>"><b><%= new Date(d + 'T00:00:00Z').toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', timeZone: 'UTC' }) %></b></a>
+        <div class="small muted"><%= list.length %> session(s)</div>
+        <% list.slice(0, 14).forEach(s => { %><div class="small" style="margin-top:4px"><span class="pill <%= s.type %>"><%= t5(s.start_time) %></span> <%= s.code || s.title.slice(0, 14) %> <span class="muted"><%= s.trainee_id ? tname(s.trainee_id).split(' ')[0] : '' %></span></div><% }) %>
+        <% if (list.length > 14) { %><div class="small muted">+<%= list.length - 14 %> more</div><% } %>
+      </div>
+    <% } %>
+  </div>
+<% } else { const first = date.slice(0, 7) + '-01', startPad = (new Date(first + 'T00:00:00Z').getUTCDay() + 6) % 7, days = new Date(Date.UTC(+date.slice(0, 4), +date.slice(5, 7), 0)).getUTCDate(); %>
+  <div class="grid" style="grid-template-columns:repeat(7,1fr);gap:6px">
+    <% ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach(w => { %><div class="small muted right"><%= w %></div><% }) %>
+    <% for (let i = 0; i < startPad; i++) { %><div></div><% } %>
+    <% for (let dd = 1; dd <= days; dd++) { const d = date.slice(0, 8) + String(dd).padStart(2, '0'), list = byDate(d); %>
+      <a class="card" href="?view=day&date=<%= d %>" style="padding:8px;min-height:70px;color:inherit;text-decoration:none;<%= list.length ? '' : 'opacity:.55' %>">
+        <b><%= dd %></b>
+        <% ['theory', 'workshop', 'simulator', 'flying', 'test'].forEach(ty => { const n = list.filter(s => s.type === ty).length; if (n) { %><div class="small"><span class="pill <%= ty %>"><%= n %> <%= ty %></span></div><% } }) %>
+      </a>
+    <% } %>
+  </div>
+<% } %>
+<%- include('../partials/end') %>

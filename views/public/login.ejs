@@ -1,0 +1,15 @@
+<%- include('../partials/site', { title: 'Log in' }) %>
+<div class="auth">
+  <div class="card">
+    <h1>Log in</h1>
+    <p class="muted">Platform admins, RPTO staff and students all sign in here.</p>
+    <% if (error) { %><div class="alert bad"><%= error %></div><% } %>
+    <form method="post" action="/login<%= query.next ? '?next=' + encodeURIComponent(query.next) : '' %>">
+      <div class="field"><label>Email</label><input name="email" type="email" value="<%= email %>" required autofocus autocomplete="username"></div>
+      <div class="field"><label>Password</label><input name="password" type="password" required autocomplete="current-password"></div>
+      <button class="btn pri" style="width:100%;justify-content:center">Log in</button>
+    </form>
+    <p class="small muted mt"><a href="/forgot">Forgot password?</a> · New here? <a href="/register">Student sign-up</a> · <a href="/register-rpto">Register an RPTO</a></p>
+  </div>
+</div>
+<%- include('../partials/site-end') %>

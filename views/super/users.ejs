@@ -1,0 +1,27 @@
+<%- include('../partials/app', { title: 'All users' }) %>
+<div class="page-head"><div><h1>All users</h1><div class="muted">Every login on the platform (latest 500 shown).</div></div></div>
+<form class="row mb">
+  <input name="s" value="<%= s %>" placeholder="Search name or email" style="max-width:260px">
+  <select name="role" style="max-width:170px"><option value="">All roles</option>
+    <option value="super_admin" <%= role === 'super_admin' ? 'selected' : '' %>>Super admin</option>
+    <option value="member" <%= role === 'member' ? 'selected' : '' %>>RPTO staff</option>
+    <option value="student" <%= role === 'student' ? 'selected' : '' %>>Student</option></select>
+  <select name="rpto" style="max-width:260px"><option value="">All RPTOs</option><% rptos.forEach(r => { %><option value="<%= r.id %>" <%= String(rpto) === String(r.id) ? 'selected' : '' %>><%= r.name %></option><% }) %></select>
+  <button class="btn">Filter</button>
+</form>
+<div class="tbl-wrap"><table>
+  <tr><th>Name</th><th>Email</th><th>Type</th><th>RPTO / roles</th><th>Status</th><th>Pilot Pro</th><th>Joined</th><th></th></tr>
+  <% users.forEach(u => { %>
+    <tr><td><%= u.name %></td><td><%= u.email %></td><td><span class="pill"><%= u.role.replace('_', ' ') %></span></td>
+      <td class="small"><%= u.rpto_name || '' %><%= u.roles ? ' · ' + u.roles : '' %></td>
+      <td><span class="pill <%= u.active ? 'ok' : 'bad' %>"><%= u.active ? 'active' : 'disabled' %></span></td>
+      <td><% if (u.role === 'student') { %><form class="row" method="post" action="/super/users/<%= u.id %>/pro" style="flex-wrap:nowrap"><input type="date" name="pro_until" value="<%= u.pro_until || '' %>" style="width:140px"><button class="btn sm">Set</button></form><% } else { %>—<% } %></td>
+      <td><%= fmtDate(u.created_at) %></td>
+      <td class="right nowrap">
+        <form class="inline" method="post" action="/super/users/<%= u.id %>/password" data-confirm="Generate a new password for <%= u.email %>?"><button class="btn sm">Reset password</button></form>
+        <% if (u.totp_enabled) { %><form class="inline" method="post" action="/super/users/<%= u.id %>/2fa-reset" data-confirm="Turn off two-step verification for <%= u.email %>? Only do this after confirming their identity."><button class="btn sm">Reset 2FA</button></form><% } %>
+        <% if (u.id !== user.id) { %><form class="inline" method="post" action="/super/users/<%= u.id %>/toggle"><button class="btn sm"><%= u.active ? 'Disable' : 'Enable' %></button></form><% } %>
+      </td></tr>
+  <% }) %>
+</table></div>
+<%- include('../partials/end') %>

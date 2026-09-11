@@ -1,0 +1,28 @@
+<%- include('../partials/app', { title: 'My fleet' }) %>
+<div class="page-head">
+  <div><h1>My fleet</h1><div class="muted">Your own drones and batteries — hours, cycles and maintenance are counted from the flights you log with them.</div></div>
+  <div class="row"><button class="btn pri" data-open="addDrone">+ Drone</button><button class="btn" data-open="addBattery">+ Battery</button></div>
+</div>
+<% [['Drones', f.drones, 'drone'], ['Batteries', f.batteries, 'battery']].forEach(([title, list, type]) => { %>
+<div class="card mb">
+  <h2><%= title %> (<%= list.length %>)</h2>
+  <div class="tbl-wrap"><table>
+    <tr><th>Name</th><th><%= type === 'drone' ? 'UIN' : 'Serial no.' %></th><th>Flights</th><th><%= type === 'drone' ? 'Flight time' : 'Cycles' %></th><th>Last used</th><th>Next maintenance</th><th>Status</th></tr>
+    <% list.forEach(a => { const worn = type === 'battery' && a.max_cycles && a.cycles >= a.max_cycles * .9; %>
+    <tr><td><a href="/pilot/fleet/<%= a.id %>"><b><%= a.name %></b></a><div class="small muted"><%= a.make || '' %></div></td><td><%= type === 'drone' ? (a.uin || '—') : (a.serial_no || '—') %></td>
+      <td><%= a.flights %></td><td><% if (type === 'drone') { %><%= mins(a.minutes) %><% } else { %><span class="<%= worn ? 'pill bad' : '' %>"><%= a.cycles %><%= a.max_cycles ? ' / ' + a.max_cycles : '' %></span><% } %></td>
+      <td><%= a.last_used || '—' %></td><td><% if (a.next_due) { %><span class="pill <%= a.next_due < today ? 'bad' : 'info' %>"><%= a.next_due %></span><% } else { %>—<% } %></td>
+      <td><span class="pill <%= a.status %>"><%= a.status %></span></td></tr>
+    <% }) %>
+    <% if (!list.length) { %><tr><td colspan="7" class="empty">None yet.</td></tr><% } %>
+  </table></div>
+</div>
+<% }) %>
+<% [['addDrone', 'drone', 'Add a drone'], ['addBattery', 'battery', 'Add a battery']].forEach(([id, type, title]) => { %>
+<dialog id="<%= id %>"><form method="post" action="/pilot/fleet">
+  <h2><%= title %></h2><input type="hidden" name="type" value="<%= type %>">
+  <%- include('_assetform', { a: {}, type }) %>
+  <div class="row"><button class="btn pri">Add</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<% }) %>
+<%- include('../partials/end') %>

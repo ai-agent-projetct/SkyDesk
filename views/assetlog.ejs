@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><%= a.name %> logbook</title>
+<style>
+body{font:13px/1.45 system-ui,"Segoe UI",sans-serif;color:#0f172a;background:#f1f5f9;margin:0}
+.doc{max-width:1000px;margin:20px auto;background:#fff;padding:28px;border-radius:8px}
+.head{display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid #0f172a;padding-bottom:10px}
+h1{font-size:20px;margin:0}h2{font-size:15px;margin:22px 0 6px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left;vertical-align:top}th{background:#f8fafc}
+.muted{color:#64748b}.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.kv div{border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px}.kv b{display:block;font-size:16px}
+.bad{color:#b91c1c;font-weight:700}
+@media print{body{background:#fff}.doc{margin:0;padding:0}.noprint{display:none}}
+</style></head><body>
+<% const total = flights.reduce((t, f) => t + f.minutes, 0), cycles = (a.initial_cycles || 0) + flights.length, isRpas = a.type === 'rpas'; %>
+<div class="doc">
+  <div class="noprint" style="margin-bottom:12px"><button onclick="print()">Print / Save as PDF</button></div>
+  <div class="head">
+    <div><h1><%= isRpas ? 'RPAS' : 'Battery' %> logbook — <%= a.name %></h1>
+      <div class="muted"><%= [a.make, isRpas ? (a.uin && 'UIN ' + a.uin) : null, a.serial_no && 'S/N ' + a.serial_no, a.category].filter(Boolean).join(' · ') %></div></div>
+    <div style="text-align:right"><b><%= rpto.name %></b><div class="muted"><%= rpto.city || '' %></div><div class="muted">Printed <%= today %></div></div>
+  </div>
+  <div class="kv">
+    <div><b><%= flights.length %></b><span class="muted">Flights</span></div>
+    <div><b><%= mins(total) %></b><span class="muted">Total time</span></div>
+    <% if (isRpas) { %><div><b><%= maintenance.length %></b><span class="muted">Maintenance entries</span></div>
+    <% } else { %><div><b class="<%= a.max_cycles && cycles >= a.max_cycles * .9 ? 'bad' : '' %>"><%= cycles %><%= a.max_cycles ? ' / ' + a.max_cycles : '' %></b><span class="muted">Charge cycles<%= a.initial_cycles ? ` (incl. ${a.initial_cycles} before logging)` : '' %></span></div><% } %>
+    <div><b><%= incidents.length %></b><span class="muted">Incidents</span></div>
+  </div>
+
+  <h2>Flights</h2>
+  <table><tr><th>#</th><th>Date</th><th>Time</th><th>Type</th><th>Activity</th><th>Pilot</th><th>Instructor</th><th><%= isRpas ? 'Battery' : 'RPAS' %></th><th>Field / place</th><th>Min</th></tr>
+    <% flights.forEach((f, i) => { %><tr><td><%= i + 1 %></td><td><%= f.date %></td><td><%= String(f.time || '').slice(0, 5) %></td><td><%= f.activity_type %></td><td><%= f.activity %></td><td><%= f.pilot_name %></td><td><%= f.instructor || '' %></td>
+      <td><%= isRpas ? (f.battery_sn || '') : (f.rpas || '') %></td><td><%= f.field || f.place || '' %></td><td><%= f.minutes %></td></tr><% }) %>
+    <% if (!flights.length) { %><tr><td colspan="10" class="muted">No flights logged.</td></tr><% } %>
+  </table>
+
+  <% if (maintenance.length || isRpas) { %><h2>Maintenance</h2>
+  <table><tr><th>Date</th><th>Type</th><th>Work done</th><th>By</th><th>Next due</th></tr>
+    <% maintenance.forEach(m => { %><tr><td><%= m.date %></td><td><%= m.type %></td><td><%= m.description || '' %></td><td><%= m.done_by || '' %></td><td><%= m.next_due || '' %></td></tr><% }) %>
+    <% if (!maintenance.length) { %><tr><td colspan="5" class="muted">No maintenance logged.</td></tr><% } %>
+  </table><% } %>
+
+  <h2>Incidents</h2>
+  <table><tr><th>Date</th><th>Severity</th><th>Description</th><th>Action taken</th></tr>
+    <% incidents.forEach(i => { %><tr><td><%= i.date %></td><td><%= i.severity %></td><td><%= i.description %></td><td><%= i.action_taken || '' %></td></tr><% }) %>
+    <% if (!incidents.length) { %><tr><td colspan="4" class="muted">None.</td></tr><% } %>
+  </table>
+  <p class="muted" style="margin-top:28px">Accountable manager signature: ____________________</p>
+</div>
+</body></html>

@@ -1,0 +1,73 @@
+<%- include('../partials/app', { title: t.name }) %>
+<div class="page-head">
+  <div><a class="small" href="/rpto/admissions">← Admissions</a><h1><%= t.name %></h1>
+    <div class="muted"><%= t.email %><%= t.phone ? ' · ' + t.phone : '' %><%= t.dob ? ' · DOB ' + fmtDate(t.dob) : '' %><%= t.father_name ? ' · S/D/o ' + t.father_name : '' %></div></div>
+  <div class="row">
+    <% if (active) { %><a class="btn" href="/rpto/applications/<%= active.id %>/record" target="_blank">Training record</a>
+      <% if (user.isAdmin) { %><a class="btn" href="/rpto/applications/<%= active.id %>/package.zip">Download package (ZIP)</a><% } %><% } %>
+    <% if (user.isAdmin) { %><form method="post" action="/rpto/users/<%= t.id %>/password" data-confirm="Reset <%= t.name %>'s password? They will be signed out."><button class="btn">Reset password</button></form><% } %>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Documents</h2>
+  <div class="tbl-wrap"><table>
+    <tr><th>Document</th><th>File</th><th>Status</th><th>Review</th><% if (user.isAdmin) { %><th>Upload on behalf</th><% } %></tr>
+    <% L.docRows(docs).forEach(([k, label, d]) => { %>
+    <tr>
+      <td><%= label %><% if (k.startsWith('other_')) { %> <span class="pill">extra</span><% } %></td>
+      <td><% if (d && d.file) { %><a href="/files/<%= d.file %>" target="_blank"><%= d.original_name || 'View' %></a><div class="small muted"><%= fmtDate(d.uploaded_at) %></div><% } else if (d && d.status === 'purged') { %><span class="muted small">File deleted after RPC</span><% } else { %><span class="muted">Not uploaded</span><% } %></td>
+      <td><span class="pill <%= d ? d.status : '' %>"><%= d ? d.status : 'missing' %></span><% if (d && d.note) { %><div class="small muted"><%= d.note %></div><% } %></td>
+      <td class="nowrap"><% if (d && d.file && user.isAdmin) { %>
+        <form class="inline" method="post" action="/rpto/trainees/<%= t.id %>/documents/<%= k %>/review"><button class="btn sm ok" name="status" value="verified">Verify</button></form>
+        <form class="inline" method="post" action="/rpto/trainees/<%= t.id %>/documents/<%= k %>/review"><input name="note" placeholder="Reason" style="width:120px"> <button class="btn sm bad" name="status" value="rejected">Reject</button></form>
+      <% } %></td>
+      <% if (user.isAdmin) { %><td><form method="post" action="/rpto/trainees/<%= t.id %>/documents/<%= k %>" enctype="multipart/form-data" class="row" style="flex-wrap:nowrap"><input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.webp" required style="width:200px"><button class="btn sm">Upload</button></form></td><% } %>
+    </tr>
+    <% }) %>
+  </table></div>
+</div>
+
+<div class="card mt">
+  <h2>Applications</h2>
+  <div class="tbl-wrap"><table>
+    <tr><th>Batch</th><th>Roll no</th><th>Status</th><th>Applied</th><th>Certificate</th><th>RPC</th><th></th></tr>
+    <% apps.forEach(a => { %>
+    <tr><td><%= a.batch_title || '—' %></td><td><%= a.roll_no || '—' %></td><td><span class="pill <%= a.status %>"><%= a.status %></span><% if (a.reason) { %><div class="small muted"><%= a.reason %></div><% } %></td>
+      <td><%= fmtDate(a.applied_at) %></td>
+      <td><% if (a.cert_no) { %><a href="/rpto/applications/<%= a.id %>/certificate" target="_blank"><%= a.cert_no %></a><div class="small muted"><%= fmtDate(a.cert_issued_at) %></div><% } else if (a.status === 'accepted' && user.isAdmin) { %>
+        <form method="post" action="/rpto/applications/<%= a.id %>/certify"><button class="btn sm ok" <%= progress && progress.eligible ? '' : 'disabled title="Attend all sessions and pass all tests first"' %>>Issue certificate</button></form><% } else { %>—<% } %></td>
+      <td><% if (a.rpc_no) { %><b><%= a.rpc_no %></b><div class="small muted"><%= fmtDate(a.rpc_issued_at) %></div><% } else if (a.cert_no && user.isAdmin) { %>
+        <form method="post" action="/rpto/applications/<%= a.id %>/rpc" class="row" style="flex-wrap:nowrap" data-confirm="Recording the RPC deletes this trainee's uploaded documents (they are no longer needed). Download the package ZIP first if you need a copy. Continue?"><input name="rpc_no" placeholder="RPC number" required style="width:130px"><input type="date" name="rpc_date" style="width:140px"><button class="btn sm">Save</button></form><% } else { %>—<% } %></td>
+      <td class="right"><% if (a.status === 'pending' && user.isAdmin) { %>
+        <form method="post" action="/rpto/applications/<%= a.id %>/decide" class="row" style="flex-wrap:nowrap">
+          <select name="batch_id" style="width:160px"><% batches.forEach(b => { %><option value="<%= b.id %>" <%= b.id === a.batch_id ? 'selected' : '' %>><%= b.title %></option><% }) %></select>
+          <button class="btn sm ok" name="decision" value="accept">Admit</button>
+          <button class="btn sm bad" name="decision" value="reject" data-confirm="Reject this application?">Reject</button>
+        </form><% } %></td>
+    </tr>
+    <% }) %>
+  </table></div>
+</div>
+
+<% if (progress) { %>
+<div class="grid g3 mt">
+  <div class="stat info"><b><%= progress.attended %>/<%= progress.total %></b><span>Training sessions attended</span></div>
+  <div class="stat <%= progress.testsPassed ? 'ok' : 'warn' %>"><b><%= progress.results.filter(x => x.r && x.r.passed).length %>/<%= progress.results.length %></b><span>Tests passed</span></div>
+  <div class="stat vio"><b><%= progress.stage %></b><span>Current stage</span></div>
+</div>
+<% } %>
+
+<div class="grid g2 mt">
+  <div class="card"><h2>Flights (<%= flights.length %>)</h2>
+    <div class="tbl-wrap"><table><tr><th>Date</th><th>Activity</th><th>RPAS</th><th>Duration</th></tr>
+      <% flights.forEach(f => { %><tr><td><%= f.date %></td><td><%= f.activity %><% if (f.track_id) { %> <a href="/flights/<%= f.track_id %>">3D</a><% } %></td><td><%= f.rpas || '—' %></td><td><%= mins(f.minutes) %></td></tr><% }) %>
+      <% if (!flights.length) { %><tr><td colspan="4" class="empty">No flights yet.</td></tr><% } %></table></div>
+  </div>
+  <div class="card"><h2>Fees</h2>
+    <div class="tbl-wrap"><table><tr><th>Description</th><th>Amount</th><th>Paid</th><th>Balance</th></tr>
+      <% fees.forEach(f => { %><tr><td><%= f.description %></td><td><%= money(f.amount) %></td><td><%= money(f.paid) %></td><td><%= money(f.amount - f.paid) %></td></tr><% }) %>
+      <% if (!fees.length) { %><tr><td colspan="4" class="empty">No fees.</td></tr><% } %></table></div>
+  </div>
+</div>
+<%- include('../partials/end') %>

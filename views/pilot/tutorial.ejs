@@ -1,0 +1,24 @@
+<%- include('../partials/app', { title: t.title }) %>
+<div class="page-head"><div><a class="small" href="/pilot/tutorials">← Tutorials</a><h1><%= t.title %></h1><div class="muted"><%= t.category %></div></div></div>
+<div class="card" style="max-width:900px">
+  <% if (t.status === 'soon') { %><div class="alert warn">This tutorial is coming soon.</div>
+  <% } else if (embed) { %><div style="position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000">
+      <iframe src="<%= embed %>" title="<%= t.title %>" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="encrypted-media; picture-in-picture; fullscreen" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+  <% } else if (t.video_url) { %><p><a class="btn pri" href="<%= t.video_url %>" target="_blank" rel="noopener">▶ Watch the video</a></p><% } %>
+  <% if (t.description) { %><div class="mt" style="white-space:pre-wrap"><%= t.description %></div><% } %>
+</div>
+<div class="card mt" id="comments" style="max-width:900px">
+  <h2>Comments (<%= comments.length %>)</h2>
+  <% comments.forEach(c => { %>
+  <div class="row" style="align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)">
+    <span class="avatar"><% if (c.avatar && c.avatar.includes('.')) { %><img src="/files/<%= c.avatar %>" alt=""><% } else { %><%= c.avatar || c.name[0] %><% } %></span>
+    <div class="grow"><b><%= c.name %></b> <span class="small muted"><%= fmtDate(c.created_at) %></span><div style="white-space:pre-wrap"><%= c.body %></div></div>
+    <% if (c.user_id === user.id) { %><form method="post" action="/pilot/comments/<%= c.id %>/delete" data-confirm="Delete your comment?"><button class="btn sm bad">×</button></form><% } %>
+  </div>
+  <% }) %>
+  <form method="post" action="/pilot/tutorials/<%= t.id %>/comments" class="mt">
+    <div class="field"><label>Add a comment or question</label><textarea name="body" rows="3" maxlength="1000" required></textarea></div>
+    <button class="btn pri">Post</button>
+  </form>
+</div>
+<%- include('../partials/end') %>

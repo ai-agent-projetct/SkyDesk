@@ -1,0 +1,24 @@
+<%- include('../partials/app', { title: 'Awaiting approval' }) %>
+<div class="card" style="max-width:820px">
+  <h1><%= user.rpto.name %></h1>
+  <% if (user.rpto.status === 'pending') { %>
+    <div class="alert warn">Your registration is under review. The platform team will verify your documents and activate your portal.</div>
+  <% } else if (user.rpto.status === 'rejected') { %>
+    <div class="alert bad">Your registration was not approved<%= user.rpto.status_note ? ': ' + user.rpto.status_note : '.' %> Update the documents below to resubmit.</div>
+  <% } else { %>
+    <div class="alert bad">This RPTO is <%= user.rpto.status %><%= user.rpto.status_note ? ': ' + user.rpto.status_note : '' %>. Contact the platform team.</div>
+  <% } %>
+  <h2 class="mt">Documents</h2>
+  <form method="post" action="/rpto/documents" enctype="multipart/form-data">
+    <div class="tbl-wrap"><table>
+      <tr><th>Document</th><th>Uploaded</th><th><%= user.isAdmin ? 'Replace / upload' : '' %></th></tr>
+      <% Object.entries(L.RPTO_DOCS).forEach(([k, label]) => { const d = docs.find(x => x.doc_type === k); %>
+        <tr><td><%= label %><%= L.RPTO_DOCS_REQUIRED.includes(k) ? ' *' : '' %></td>
+          <td><% if (d) { %><a href="/files/<%= d.file %>" target="_blank"><%= d.original_name || 'View' %></a><% } else { %><span class="pill">missing</span><% } %></td>
+          <td><% if (user.isAdmin && user.rpto.status !== 'suspended') { %><input type="file" name="<%= k %>" accept=".pdf,.jpg,.jpeg,.png,.webp"><% } %></td></tr>
+      <% }) %>
+    </table></div>
+    <% if (user.isAdmin && user.rpto.status !== 'suspended') { %><button class="btn pri mt">Upload documents</button><% } %>
+  </form>
+</div>
+<%- include('../partials/end') %>

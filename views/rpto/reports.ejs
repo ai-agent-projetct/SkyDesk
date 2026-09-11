@@ -1,0 +1,69 @@
+<%- include('../partials/app', { title: 'Reports' }) %>
+<%
+  const maxMin = Math.max(1, ...monthly.map(m => +m.minutes));
+  const months = [...new Set([...monthly.map(m => m.ym), ...sessions.map(s => s.ym)])].sort();
+  const sess = (ym, t) => (sessions.find(s => s.ym === ym && s.type === t) || { n: 0 }).n;
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+%>
+<div class="page-head"><div><h1>Reports</h1><div class="muted">Utilisation, instructor currency, maintenance and incidents — built from your training flights and logbooks (last 12 months).</div></div></div>
+
+<div class="grid g5 mb">
+  <div class="stat info"><b><%= outcomes.admitted || 0 %></b><span>Trainees admitted</span></div>
+  <div class="stat ok"><b><%= outcomes.certified || 0 %></b><span>Certified (<%= pct(+outcomes.certified, +outcomes.admitted) %>%)</span></div>
+  <div class="stat vio"><b><%= outcomes.rpc || 0 %></b><span>RPC issued</span></div>
+  <div class="stat"><b><%= outcomes.cancelled || 0 %></b><span>Cancelled</span></div>
+  <div class="stat <%= due.length ? 'warn' : 'ok' %>"><b><%= due.length %></b><span>Maintenance due ≤ 30 days</span></div>
+</div>
+
+<div class="card mb">
+  <div class="row between"><h2 style="margin:0">Flight utilisation</h2><a class="btn sm" href="?export=utilisation">Export</a></div>
+  <div class="tbl-wrap mt"><table><tr><th>Month</th><th style="width:40%">Flight time</th><th>Flights</th><th>Pilots</th><th>Theory</th><th>Workshop</th><th>Simulator</th><th>Flying</th><th>Tests</th></tr>
+    <% months.forEach(ym => { const m = monthly.find(x => x.ym === ym) || { flights: 0, minutes: 0, pilots: 0 }; %>
+      <tr><td><%= ym %></td><td><div class="row" style="flex-wrap:nowrap"><div class="bar grow"><i style="width:<%= m.minutes / maxMin * 100 %>%"></i></div><span class="small nowrap"><%= mins(+m.minutes) %></span></div></td>
+        <td><%= m.flights %></td><td><%= m.pilots %></td><% ['theory', 'workshop', 'simulator', 'flying', 'test'].forEach(t => { %><td><%= sess(ym, t) %></td><% }) %></tr>
+    <% }) %>
+    <% if (!months.length) { %><tr><td colspan="9" class="empty">No activity in the last 12 months.</td></tr><% } %>
+  </table></div>
+  <p class="small muted">Session columns count sessions marked done.</p>
+</div>
+
+<div class="grid g2 mb">
+  <div class="card">
+    <div class="row between"><h2 style="margin:0">RPAS utilisation & maintenance</h2><a class="btn sm" href="?export=rpas">Export</a></div>
+    <div class="tbl-wrap mt"><table><tr><th>RPAS</th><th>Flights</th><th>Time</th><th>Last used</th><th>Last maint.</th><th>Next due</th></tr>
+      <% rpas.forEach(a => { %><tr><td><b><%= a.name %></b><div class="small muted"><%= a.uin || '' %> · <%= a.status.replace('_', ' ') %></div></td><td><%= a.flights %></td><td><%= mins(+a.minutes) %></td><td><%= a.last_used || '—' %></td><td><%= a.last_maint || '—' %></td><td><%= a.next_due || '—' %></td></tr><% }) %>
+      <% if (!rpas.length) { %><tr><td colspan="6" class="empty">No RPAS.</td></tr><% } %>
+    </table></div>
+  </div>
+  <div class="card">
+    <h2>Battery cycles</h2>
+    <div class="tbl-wrap"><table><tr><th>Battery</th><th>Cycles (flights)</th><th>Time</th><th>Status</th></tr>
+      <% batteries.forEach(b => { %><tr><td><%= b.name %> <span class="small muted"><%= b.serial_no || '' %></span></td><td><%= b.cycles %></td><td><%= mins(+b.minutes) %></td><td><span class="pill <%= b.status %>"><%= b.status.replace('_', ' ') %></span></td></tr><% }) %>
+      <% if (!batteries.length) { %><tr><td colspan="4" class="empty">No batteries.</td></tr><% } %>
+    </table></div>
+    <p class="small muted">Cycles are counted from logged flights; retire packs per the manufacturer's cycle limit.</p>
+  </div>
+</div>
+
+<div class="grid g2 mb">
+  <div class="card">
+    <div class="row between"><h2 style="margin:0">Instructor currency</h2><a class="btn sm" href="?export=currency">Export</a></div>
+    <div class="tbl-wrap mt"><table><tr><th>Instructor</th><th>Certificate</th><th>Last supervised flight</th><th>Flights 90d</th><th>Sessions 90d</th><th>Status</th></tr>
+      <% currency.forEach(c => { const current = c.flights_90 > 0 || c.sessions_90 > 0; %><tr><td><%= c.name %></td><td><span class="pill <%= c.certified ? 'ok' : 'warn' %>"><%= c.certified ? 'on file' : 'missing' %></span></td>
+        <td><%= c.last_flight || '—' %></td><td><%= c.flights_90 %></td><td><%= c.sessions_90 %></td><td><span class="pill <%= current ? 'ok' : 'warn' %>"><%= current ? 'current' : 'lapsed' %></span></td></tr><% }) %>
+      <% if (!currency.length) { %><tr><td colspan="6" class="empty">No instructors.</td></tr><% } %>
+    </table></div>
+    <p class="small muted">"Current" = taught or supervised at least once in the last 90 days (internal recency check — adjust to your RPTO's policy).</p>
+  </div>
+  <div class="card">
+    <div class="row between"><h2 style="margin:0">Incidents & maintenance due</h2><a class="btn sm" href="?export=incidents">Export</a></div>
+    <div class="tbl-wrap mt"><table><tr><th>Month</th><th>Severity</th><th>Count</th></tr>
+      <% incidents.forEach(i => { %><tr><td><%= i.ym %></td><td><span class="pill <%= i.severity %>"><%= i.severity %></span></td><td><%= i.n %></td></tr><% }) %>
+      <% if (!incidents.length) { %><tr><td colspan="3" class="empty">No incidents in the last 12 months.</td></tr><% } %>
+    </table></div>
+    <h3 class="mt">Maintenance due</h3>
+    <% due.forEach(d => { %><div class="row between small" style="padding:4px 0;border-bottom:1px solid var(--line)"><span><b><%= d.name %></b> — <%= d.type %><%= d.description ? ': ' + d.description : '' %></span><span class="pill <%= d.next_due < today ? 'bad' : 'warn' %>"><%= d.next_due %></span></div><% }) %>
+    <% if (!due.length) { %><div class="empty">Nothing due.</div><% } %>
+  </div>
+</div>
+<%- include('../partials/end') %>

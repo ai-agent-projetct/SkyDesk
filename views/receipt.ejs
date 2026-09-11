@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Receipt <%= p.receipt_no %></title>
+<style>
+body{font:14px/1.5 system-ui,"Segoe UI",sans-serif;color:#0f172a;background:#f1f5f9;margin:0}
+.doc{max-width:720px;margin:20px auto;background:#fff;padding:32px;border-radius:8px}
+.head{display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid #0f172a;padding-bottom:12px}
+h1{font-size:20px;margin:0}table{border-collapse:collapse;width:100%;margin-top:16px}th,td{border:1px solid #cbd5e1;padding:7px 10px;text-align:left}th{background:#f8fafc;width:40%}
+.amt{font-size:22px;font-weight:800}.muted{color:#64748b}.sign{display:flex;justify-content:space-between;align-items:flex-end;margin-top:34px}
+@media print{body{background:#fff}.doc{margin:0;padding:0}.noprint{display:none}}
+</style></head><body>
+<div class="doc">
+  <div class="noprint" style="margin-bottom:12px"><button onclick="print()">Print / Save as PDF</button></div>
+  <div class="head">
+    <div><h1><%= rpto.name %></h1><div class="muted"><%= rpto.address || rpto.city %></div>
+      <% if (rpto.gstin) { %><div class="muted">GSTIN: <%= rpto.gstin %></div><% } %></div>
+    <div style="text-align:right"><% if (rpto.logo) { %><img src="/files/<%= rpto.logo %>" alt="" style="max-height:56px"><br><% } %><b>PAYMENT RECEIPT</b><div><%= p.receipt_no %></div></div>
+  </div>
+  <table>
+    <tr><th>Date</th><td><%= fmtDate(p.paid_on) %></td></tr>
+    <tr><th>Received from</th><td><b><%= p.name %></b><br><span class="muted"><%= p.email %><%= p.phone ? ' · ' + p.phone : '' %></span></td></tr>
+    <tr><th>Towards</th><td><%= p.description %><%= p.batch ? ' — ' + p.batch : '' %></td></tr>
+    <tr><th>Amount received</th><td class="amt"><%= money(p.amount) %></td></tr>
+    <% if (+p.gst_percent) { %>
+      <tr><th>Taxable value</th><td><%= money(split.taxable) %></td></tr>
+      <tr><th>GST @ <%= +p.gst_percent %>% (included)</th><td><%= money(split.gst) %> <span class="muted">(CGST <%= money(split.gst / 2) %> + SGST <%= money(split.gst / 2) %> for intra-state supply)</span></td></tr>
+    <% } %>
+    <tr><th>Payment mode</th><td><%= { upi: 'UPI', cash: 'Cash', bank: 'Bank transfer', card: 'Card', cheque: 'Cheque', other: 'Other' }[p.mode] %><%= p.reference ? ' · Ref ' + p.reference : '' %></td></tr>
+    <tr><th>Total payable / balance after this payment</th><td><%= money(p.fee_amount) %> / <b><%= money(balance) %></b></td></tr>
+  </table>
+  <div class="sign">
+    <div class="muted small">Received by <%= p.received_by || '' %><br>This is a computer-generated receipt.</div>
+    <div style="text-align:center"><% if (rpto.stamp) { %><img src="/files/<%= rpto.stamp %>" alt="" style="max-height:70px"><% } %>
+      <% if (rpto.signature) { %><img src="/files/<%= rpto.signature %>" alt="" style="max-height:44px;display:block;margin:auto"><% } %><div>Authorised signatory</div></div>
+  </div>
+</div>
+</body></html>

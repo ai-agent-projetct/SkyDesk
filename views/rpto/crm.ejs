@@ -1,0 +1,154 @@
+<%- include('../partials/app', { title: 'CRM' }) %>
+<div class="page-head">
+  <div class="row">
+    <form class="row"><input type="hidden" name="tab" value="<%= tab %>"><input name="s" value="<%= s %>" placeholder="Search leads by name, phone, interest…" style="width:280px"></form>
+    <% if (tab === 'leads') { %>
+      <button class="btn pri" data-open="addLead">+ Add lead</button>
+      <button class="btn" data-open="importLeads">Import</button>
+      <button class="btn" data-open="shareForm">Share form</button>
+    <% } else { %><button class="btn pri" data-open="addFee">+ Add fee</button><% } %>
+  </div>
+  <div class="row"><a class="btn <%= tab === 'leads' ? 'pri' : '' %>" href="/rpto/crm">Leads</a><a class="btn <%= tab === 'fees' ? 'pri' : '' %>" href="/rpto/crm?tab=fees">₹ Fees</a></div>
+</div>
+
+<% if (tab === 'leads') { %>
+<div class="grid g5 mb">
+  <div class="stat"><b><%= k.new_week %></b><span>New this week</span></div>
+  <a class="stat warn" href="/rpto/crm"><b><%= k.due %></b><span>Follow-ups due</span></a>
+  <div class="stat ok"><b><%= k.converted_month %></b><span>Converted (month)</span></div>
+  <div class="stat info"><b><%= k.total ? Math.round(k.converted / k.total * 100) : 0 %>%</b><span>Conversion rate</span></div>
+</div>
+<div class="row mb">
+  <% [['', 'All'], ['new', 'New'], ['contacted', 'Contacted'], ['interested', 'Interested'], ['converted', 'Converted'], ['lost', 'Lost']].forEach(([v, l]) => { %>
+    <a class="btn sm <%= st === v ? 'pri' : '' %>" href="/rpto/crm?status=<%= v %>&s=<%= encodeURIComponent(s) %>"><%= l %></a>
+  <% }) %>
+  <span class="grow"></span><a class="btn sm" href="/rpto/crm?export=1&status=<%= st %>&s=<%= encodeURIComponent(s) %>">Export to Excel</a>
+</div>
+<% if (!leads.length) { %><div class="card empty">No leads yet. Add your first enquiry to start the pipeline.</div><% } else { %>
+<div class="tbl-wrap"><table>
+  <tr><th>Lead</th><th>Source</th><th>Interested in</th><th>Status</th><th>Follow-up</th><th>Notes</th><th></th></tr>
+  <% leads.forEach(l => { const overdue = l.follow_up && l.follow_up <= today && !['converted','lost'].includes(l.status); %>
+  <tr>
+    <td><b><%= l.name %></b><div class="small muted"><%= [l.phone, l.email, l.city].filter(Boolean).join(' · ') %></div></td>
+    <td><span class="pill"><%= l.source %></span></td>
+    <td><%= l.interest || '—' %></td>
+    <td colspan="3">
+      <form method="post" action="/rpto/crm/leads/<%= l.id %>" class="row" style="flex-wrap:nowrap">
+        <select name="status" style="width:130px"><% ['new','contacted','interested','converted','lost'].forEach(x => { %><option <%= l.status === x ? 'selected' : '' %>><%= x %></option><% }) %></select>
+        <input type="date" name="follow_up" value="<%= l.follow_up || '' %>" style="width:150px;<%= overdue ? 'border-color:var(--bad)' : '' %>">
+        <input name="notes" value="<%= l.notes || '' %>" placeholder="Notes" style="min-width:160px">
+        <button class="btn sm">Save</button>
+      </form>
+    </td>
+    <td class="right nowrap">
+      <% if (l.phone) { %><a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/<%= String(l.phone).replace(/\D/g, '').replace(/^(\d{10})$/, '91$1') %>">WhatsApp</a><% } %>
+      <% if (l.status !== 'converted') { %><button class="btn sm ok" data-open="conv<%= l.id %>">Convert</button><% } %>
+      <form class="inline" method="post" action="/rpto/crm/leads/<%= l.id %>/delete" data-confirm="Delete this lead?"><button class="btn sm bad">×</button></form>
+      <dialog id="conv<%= l.id %>"><form method="post" action="/rpto/crm/leads/<%= l.id %>/convert">
+        <h2>Convert <%= l.name %> to trainee</h2>
+        <p class="muted small">Creates a student login and a pending application in Admissions.</p>
+        <div class="field"><label>Email *</label><input type="email" name="email" value="<%= l.email || '' %>" required></div>
+        <div class="field"><label>Batch</label><select name="batch_id"><option value="">Decide later</option><% batches.forEach(b => { %><option value="<%= b.id %>"><%= b.title %></option><% }) %></select></div>
+        <div class="row"><button class="btn pri">Convert</button><button type="button" class="btn" data-close>Cancel</button></div>
+      </form></dialog>
+    </td>
+  </tr>
+  <% }) %>
+</table></div>
+<% } %>
+
+<dialog id="addLead"><form method="post" action="/rpto/crm/leads">
+  <h2>Add lead</h2>
+  <div class="field"><label>Name *</label><input name="name" required placeholder="e.g. Arjun Mehta"></div>
+  <div class="fields">
+    <div class="field"><label>Phone</label><input name="phone" placeholder="+91 90000 00000"></div>
+    <div class="field"><label>Email</label><input type="email" name="email" placeholder="name@example.com"></div>
+    <div class="field"><label>City</label><input name="city"></div>
+    <div class="field"><label>Source</label><select name="source"><% L.LEAD_SOURCES.forEach(x => { %><option <%= x === 'Manual' ? 'selected' : '' %>><%= x %></option><% }) %></select></div>
+    <div class="field"><label>Interested in</label><input name="interest" placeholder="e.g. Small rotorcraft course"></div>
+    <div class="field"><label>First follow-up</label><input type="date" name="follow_up"></div>
+  </div>
+  <div class="field"><label>Notes</label><textarea name="notes" rows="2" placeholder="What did they ask about?"></textarea></div>
+  <div class="row"><button class="btn pri">Save lead</button><button class="btn ok" name="whatsapp" value="1">Save and message on WhatsApp</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<dialog id="importLeads"><form method="post" action="/rpto/crm/import" enctype="multipart/form-data">
+  <h2>Import leads</h2>
+  <p class="muted small">CSV with a header row. Recognised columns: name, phone, email, city, source, interest, notes.</p>
+  <div class="field"><input type="file" name="file" accept=".csv,text/csv" required></div>
+  <div class="row"><button class="btn pri">Import</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<dialog id="shareForm">
+  <h2>Share your enquiry form</h2>
+  <p class="muted small">Post this link on your website, Instagram bio or WhatsApp status. Every submission lands here as a Website lead.</p>
+  <div class="row"><input readonly value="<%= shareUrl %>" class="grow"><button class="btn" data-copy="<%= shareUrl %>">Copy</button></div>
+  <div class="row mt"><a class="btn" target="_blank" href="<%= shareUrl %>">Open form</a><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=<%= encodeURIComponent('Enquire about drone pilot training: ' + shareUrl) %>">Share on WhatsApp</a><button class="btn" data-close>Close</button></div>
+</dialog>
+<% } else { %>
+<p class="muted">Course fees, payments and receipts — per batch, per trainee. Amounts include GST.</p>
+<div class="card mb">
+  <form class="row" method="get"><input type="hidden" name="tab" value="fees">
+    <label style="margin:0">Batch</label>
+    <select name="batch" onchange="this.form.submit()" style="width:auto"><% batches.forEach(b => { %><option value="<%= b.id %>" <%= batch && batch.id === b.id ? 'selected' : '' %>><%= b.title %> (<%= b.status %>)</option><% }) %></select>
+  </form>
+  <% if (batch) { %>
+  <form class="row mt" method="post" action="/rpto/crm/fees/batch/<%= batch.id %>" data-confirm="Apply this fee to every admitted trainee in <%= batch.title %>? Payments already recorded are kept.">
+    <div class="field"><label>Course fee (₹, before GST)</label><input type="number" name="fee" step="0.01" min="0" value="<%= +batch.fee %>" style="width:150px"></div>
+    <div class="field"><label>GST %</label><input type="number" name="gst_percent" step="0.01" min="0" max="28" value="<%= +batch.gst_percent %>" style="width:90px"></div>
+    <div class="field"><label>Due date</label><input type="date" name="due_date" style="width:auto"></div>
+    <div class="field"><label>&nbsp;</label><button class="btn">Set</button></div>
+    <span class="small muted">Payable per trainee: <b><%= money(batch.fee * (100 + +batch.gst_percent) / 100) %></b></span>
+  </form>
+  <% } %>
+</div>
+<div class="grid g5 mb">
+  <div class="stat"><b><%= money(fk.billed) %></b><span>Batch total</span></div>
+  <div class="stat ok"><b><%= money(fk.collected) %></b><span>Collected</span></div>
+  <div class="stat warn"><b><%= money(fk.outstanding) %></b><span>Outstanding</span></div>
+  <div class="stat" style="border-color:#fecaca"><b style="color:var(--bad)"><%= fk.overdueCount %></b><span>Overdue (<%= money(fk.overdue) %>)</span></div>
+</div>
+<div class="row mb"><span class="grow"></span><a class="btn sm" href="/rpto/crm?tab=fees&batch=<%= batch ? batch.id : '' %>&export=1">Export to Excel</a></div>
+<div class="tbl-wrap"><table>
+  <tr><th>Trainee</th><th>Fee</th><th>Payable</th><th>Paid</th><th>Balance</th><th>Status</th><th>Due</th><th></th></tr>
+  <% fees.forEach(f => { const bal = +(f.amount - f.paid).toFixed(2), mine = payments.filter(p => p.fee_id === f.id), overdue = bal > 0 && f.due_date && f.due_date < today; %>
+  <tr><td><b><%= f.name %></b><div class="small muted"><%= f.email %></div></td><td class="small"><%= f.description %><%= f.batch ? '' : ' (no batch)' %><%= +f.gst_percent ? ` · incl. ${+f.gst_percent}% GST` : '' %></td>
+    <td><%= money(f.amount) %></td><td><%= money(f.paid) %></td><td><%= money(bal) %></td>
+    <td><span class="pill <%= bal <= 0 ? 'ok' : overdue ? 'bad' : f.paid > 0 ? 'info' : 'warn' %>"><%= bal <= 0 ? 'Paid' : overdue ? 'Overdue' : f.paid > 0 ? 'Part-paid' : 'Due' %></span></td>
+    <td><%= fmtDate(f.due_date) %></td>
+    <td class="right nowrap">
+      <% if (bal > 0) { %><button class="btn sm ok" data-open="pay<%= f.id %>">Record payment</button><% } %>
+      <% if (mine.length) { %><button class="btn sm" data-open="hist<%= f.id %>">Receipts (<%= mine.length %>)</button><% } %>
+      <% if (user.isAdmin && !mine.length) { %><form class="inline" method="post" action="/rpto/crm/fees/<%= f.id %>/delete" data-confirm="Delete this fee record?"><button class="btn sm bad">×</button></form><% } %>
+      <dialog id="pay<%= f.id %>"><form method="post" action="/rpto/crm/fees/<%= f.id %>/pay">
+        <h2>Record payment — <%= f.name %></h2>
+        <p class="small muted">Balance <%= money(bal) %>. A numbered receipt is generated.</p>
+        <div class="fields">
+          <div class="field"><label>Amount (₹) *</label><input type="number" name="amount" step="0.01" min="0.01" max="<%= bal %>" value="<%= bal %>" required></div>
+          <div class="field"><label>Mode</label><select name="mode"><% [['upi', 'UPI'], ['cash', 'Cash'], ['bank', 'Bank transfer'], ['card', 'Card'], ['cheque', 'Cheque'], ['other', 'Other']].forEach(([v, l]) => { %><option value="<%= v %>"><%= l %></option><% }) %></select></div>
+          <div class="field"><label>Reference / UTR</label><input name="reference"></div>
+          <div class="field"><label>Paid on</label><input type="date" name="paid_on" value="<%= today %>"></div>
+        </div>
+        <div class="row"><button class="btn pri">Save & print receipt</button><button type="button" class="btn" data-close>Cancel</button></div>
+      </form></dialog>
+      <dialog id="hist<%= f.id %>"><h2>Payments — <%= f.name %></h2>
+        <div class="tbl-wrap"><table><tr><th>Receipt</th><th>Date</th><th>Mode</th><th>Amount</th><th></th></tr>
+          <% mine.forEach(p => { %><tr><td><a target="_blank" href="/rpto/receipts/<%= p.id %>"><%= p.receipt_no %></a></td><td><%= p.paid_on %></td><td><%= p.mode %><%= p.reference ? ' · ' + p.reference : '' %></td><td><%= money(p.amount) %></td>
+            <td><% if (user.isAdmin) { %><form method="post" action="/rpto/crm/payments/<%= p.id %>/delete" data-confirm="Delete payment <%= p.receipt_no %>?"><button class="btn sm bad">×</button></form><% } %></td></tr><% }) %>
+        </table></div><button class="btn mt" data-close>Close</button></dialog>
+    </td></tr>
+  <% }) %>
+  <% if (!fees.length) { %><tr><td colspan="8" class="empty">No fees for this batch yet. Set the course fee above — it applies to every admitted trainee (and to trainees admitted later).</td></tr><% } %>
+</table></div>
+<dialog id="addFee"><form method="post" action="/rpto/crm/fees">
+  <h2>Add another fee</h2>
+  <p class="small muted">For one-off charges such as a re-test or an extra flying hour. Course fees are set per batch above.</p>
+  <div class="field"><label>Trainee *</label><select name="user_id" required><option value="">Select…</option><% trainees.forEach(t => { %><option value="<%= t.id %>"><%= t.name %> (<%= t.email %>)</option><% }) %></select></div>
+  <div class="fields">
+    <div class="field"><label>Description</label><input name="description" value="Re-test fee"></div>
+    <div class="field"><label>Amount before GST (₹) *</label><input type="number" step="0.01" min="1" name="amount" required></div>
+    <div class="field"><label>GST %</label><input type="number" step="0.01" min="0" max="28" name="gst_percent" value="<%= batch ? +batch.gst_percent : 0 %>"></div>
+    <div class="field"><label>Due date</label><input type="date" name="due_date"></div>
+  </div>
+  <div class="row"><button class="btn pri">Add fee</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<% } %>
+<%- include('../partials/end') %>

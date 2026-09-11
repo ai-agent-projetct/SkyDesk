@@ -1,0 +1,79 @@
+<%- include('../partials/app', { title: 'Admissions' }) %>
+<%
+  const docIcons = uid => Object.entries(L.TRAINEE_DOCS).map(([k, label]) => {
+    const st = (docMap[uid] || {})[k];
+    return `<span class="doc ${st || ''}" title="${label} · ${st || 'not uploaded'}">${st === 'verified' ? '✓' : st === 'rejected' ? '!' : st ? '…' : '·'}</span>`;
+  }).join('');
+%>
+<div class="page-head">
+  <div><h1>Admissions</h1><div class="muted"><%= user.rpto.name %> — act on pending applications first; the full admitted & decided registry is below.</div></div>
+  <button class="btn pri" data-open="addTrainee">+ Add trainee</button>
+</div>
+
+<h2>Pending (<%= pending.length %>)</h2>
+<% if (!pending.length) { %><p class="muted">No pending applications.</p><% } else { %>
+<div class="tbl-wrap mb"><table>
+  <tr><th>Applicant</th><th>Requested batch</th><th>Documents</th><th>Applied</th><th>Decision</th></tr>
+  <% pending.forEach(a => { %>
+  <tr>
+    <td><a href="/rpto/trainees/<%= a.user_id %>"><b><%= a.name %></b></a><div class="small muted"><%= a.email %></div></td>
+    <td><%= a.batch_title || '—' %></td>
+    <td><div class="docs"><%- docIcons(a.user_id) %></div><div class="small muted"><%= a.docs_ok %>/<%= DOCN %> verified · <a href="/rpto/trainees/<%= a.user_id %>">review</a></div></td>
+    <td><%= fmtDate(a.applied_at) %></td>
+    <td>
+      <form method="post" action="/rpto/applications/<%= a.id %>/decide" class="row" style="flex-wrap:nowrap">
+        <select name="batch_id" style="width:190px"><% batches.forEach(b => { %><option value="<%= b.id %>" <%= b.id === a.batch_id ? 'selected' : '' %> <%= b.taken >= b.seats ? 'disabled' : '' %>><%= b.title %> (<%= b.taken %>/<%= b.seats %>)</option><% }) %></select>
+        <button class="btn sm ok" name="decision" value="accept" <%= a.docs_ok < DOCN ? 'title="All documents must be verified first"' : '' %>>Admit</button>
+        <input name="reason" placeholder="Reason (if rejecting)" style="width:160px">
+        <button class="btn sm bad" name="decision" value="reject" data-confirm="Reject this application?">Reject</button>
+      </form>
+    </td>
+  </tr>
+  <% }) %>
+</table></div>
+<% } %>
+
+<h2 class="mt">Admitted & decided (<%= total %>)</h2>
+<form class="row mb">
+  <input name="s" value="<%= s %>" placeholder="Search name or email" style="max-width:220px">
+  <select name="status" style="max-width:150px"><option value="">All statuses</option><% [['accepted','Accepted'],['rejected','Rejected'],['cancelled','Cancelled'],['withdrawn','Withdrawn']].forEach(([v, l]) => { %><option value="<%= v %>" <%= status === v ? 'selected' : '' %>><%= l %></option><% }) %></select>
+  <select name="batch" style="max-width:180px"><option value="">All batches</option><% batches.forEach(b => { %><option value="<%= b.id %>" <%= String(batch) === String(b.id) ? 'selected' : '' %>><%= b.title %></option><% }) %></select>
+  <select name="docs" style="max-width:190px"><option value="">All documents</option><option value="complete" <%= docs === 'complete' ? 'selected' : '' %>>Documents complete</option><option value="missing" <%= docs === 'missing' ? 'selected' : '' %>>Documents missing</option></select>
+  <button class="btn">Filter</button>
+  <span class="grow"></span><span class="small muted"><%= registry.length %> of <%= total %></span>
+  <a class="btn ok" href="/rpto/admissions?export=1&status=<%= status %>&batch=<%= batch %>&docs=<%= docs %>&s=<%= encodeURIComponent(s) %>">Export to Excel</a>
+</form>
+<div class="tbl-wrap"><table>
+  <tr><th>Applicant</th><th>Batch</th><th>Roll no</th><th>Status</th><th>Documents</th><th>Records</th><th>Applied</th><th>Decided</th><th>Reason</th><th class="right">Actions</th></tr>
+  <% registry.forEach(a => { %>
+  <tr>
+    <td><a href="/rpto/trainees/<%= a.user_id %>"><b><%= a.name %></b></a><div class="small muted"><%= a.email %></div></td>
+    <td><%= a.batch_title || '—' %></td><td class="small"><%= a.roll_no || '—' %></td>
+    <td><span class="pill <%= a.status %>"><%= a.status %></span></td>
+    <td><div class="docs"><span class="small <%= a.docs_ok >= DOCN ? '' : 'muted' %>"><%= a.docs_ok %>/<%= DOCN %></span><%- docIcons(a.user_id) %></div></td>
+    <td class="small"><%= a.rpc_no ? 'RPC ' + a.rpc_no : a.cert_no ? 'Cert ' + a.cert_no : '—' %></td>
+    <td><%= fmtDate(a.applied_at) %></td><td><%= fmtDate(a.decided_at) %></td><td class="small"><%= a.reason || '—' %></td>
+    <td class="right nowrap">
+      <% if (a.status === 'accepted' && !a.cert_no) { %>
+        <form class="inline" method="post" action="/rpto/applications/<%= a.id %>/cancel" data-confirm="Cancel this admission and remove the trainee from the batch?"><button class="btn sm bad">Cancel</button></form>
+      <% } %>
+      <% if (a.status === 'accepted') { %><a class="btn sm" href="/rpto/applications/<%= a.id %>/package.zip">Package</a><% } %>
+    </td>
+  </tr>
+  <% }) %>
+  <% if (!registry.length) { %><tr><td colspan="10" class="empty">No records match.</td></tr><% } %>
+</table></div>
+
+<dialog id="addTrainee"><form method="post" action="/rpto/admissions/add">
+  <h2>Add trainee</h2>
+  <p class="muted small">Creates the trainee's student login and a pending application. Upload and verify their documents, then admit them.</p>
+  <div class="field"><label>Full name *</label><input name="name" required></div>
+  <div class="fields">
+    <div class="field"><label>Email *</label><input type="email" name="email" required></div>
+    <div class="field"><label>Mobile</label><input name="phone"></div>
+    <div class="field"><label>Batch</label><select name="batch_id"><option value="">Decide later</option><% batches.forEach(b => { %><option value="<%= b.id %>"><%= b.title %></option><% }) %></select></div>
+    <div class="field"><label>Password (blank = generate)</label><input name="password" autocomplete="off"></div>
+  </div>
+  <div class="row"><button class="btn pri">Add trainee</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<%- include('../partials/end') %>

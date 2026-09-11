@@ -1,0 +1,101 @@
+<%- include('../partials/app', { title: 'Dashboard' }) %>
+<%
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth(), days = new Date(y, m + 1, 0).getDate();
+  const monthStart = new Date(Date.UTC(y, m, 1)), dayOf = d => d ? Math.round((new Date(d + 'T00:00:00Z') - monthStart) / 864e5) + 1 : null;
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+  const ASSET_LABEL = L.ASSET_TYPES;
+%>
+<div class="page-head">
+  <div><h1><%= user.rpto.name %></h1><div class="muted"><%= user.rpto.city %> · You are <%= user.roles.join(' & ') %></div></div>
+  <button class="btn" data-open="customize">⚙ Customize</button>
+</div>
+<dialog id="customize"><h2>Customize dashboard</h2><p class="small muted">Choose the panels you want to see. Saved on this device.</p><div id="custList" class="grid" style="gap:6px"></div><button class="btn mt" data-close>Done</button></dialog>
+<% licences.forEach(l => { const expired = l.license_expiry < today; %>
+  <div class="alert <%= expired ? 'bad' : 'warn' %>">Instructor licence <%= expired ? 'expired' : 'expiring soon' %>: <b><%= l.name %></b> (<%= l.license_no || 'no number' %>) — <%= fmtDate(l.license_expiry) %>. <%= expired ? 'Do not assign them to training until it is renewed.' : 'Renew it before it lapses.' %></div>
+<% }) %>
+<div class="grid g5" data-w="kpis" data-label="Key numbers">
+  <% if (credits !== null) { %><a class="stat <%= credits > 0 ? 'ok' : 'warn' %>" href="/rpto/billing"><b><%= credits %></b><span>Completion credits left →</span></a><% } %>
+  <% if (k.unmarked) { %><a class="stat warn" href="/rpto/batches?attendance=unmarked"><b><%= k.unmarked %></b><span>Past sessions need attendance marked →</span></a><% } %>
+  <div class="stat info"><b><%= k.active_batches %></b><span>Active batches</span></div>
+  <a class="stat warn" href="/rpto/admissions"><b><%= k.applied %></b><span>Pending admissions</span></a>
+  <div class="stat info"><b><%= k.in_training %></b><span>In training</span></div>
+  <div class="stat ok"><b><%= k.certified %></b><span>Certificates issued</span></div>
+  <div class="stat"><b><%= k.instructors %></b><span>Instructors</span></div>
+  <div class="stat"><b><%= k.trainees %></b><span>Total trainees</span></div>
+</div>
+
+<div class="card mt" data-w="pipeline" data-label="Training pipeline">
+  <div class="row"><h3 style="margin:0">Training pipeline</h3>
+    <div class="grid g5 grow">
+      <div class="stat warn"><b><%= k.applied %></b><span>Applied</span></div>
+      <div class="stat info"><b><%= k.admitted %></b><span>Admitted</span></div>
+      <div class="stat cyan"><b><%= k.in_training %></b><span>In training</span></div>
+      <div class="stat ok"><b><%= k.certified %></b><span>Certified</span></div>
+      <div class="stat vio"><b><%= k.rpc %></b><span>RPC issued</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid g2 mt">
+  <div class="card" data-w="today" data-label="Today's sessions">
+    <h3>Today</h3>
+    <div class="muted small mb"><%= todays.length %> session<%= todays.length === 1 ? '' : 's' %> today</div>
+    <% todays.forEach(s => { %>
+      <a href="/rpto/sessions/<%= s.id %>" class="row between" style="padding:6px 0;border-bottom:1px solid var(--line);color:inherit">
+        <div><span class="pill <%= s.type %>"><%= s.type %></span> <b><%= s.title %></b><div class="small muted"><%= s.batch %> · <%= s.instructor || 'No instructor' %></div></div>
+        <div class="small nowrap"><%= String(s.start_time || '').slice(0, 5) %>–<%= String(s.end_time || '').slice(0, 5) %> <span class="pill <%= s.status %>"><%= s.status %></span></div>
+      </a>
+    <% }) %>
+    <% if (!todays.length) { %><div class="empty">No sessions scheduled today.</div><% } %>
+  </div>
+  <div class="card" data-w="month" data-label="Batches this month">
+    <h3>Batches this month · <%= now.toLocaleString('en-IN', { month: 'long', year: 'numeric' }) %></h3>
+    <% month.forEach(b => { const s = Math.max(1, dayOf(b.start_date) || 1), e = Math.min(days, dayOf(b.end_date || b.start_date) || days); %>
+      <div class="mb">
+        <div class="row between small"><a href="/rpto/batches/<%= b.id %>"><b><%= b.title %></b></a><span class="muted"><%= b.trainees %> trainees · <%= b.delivery %> · <%= b.done %>/<%= b.total %> done</span></div>
+        <div class="cal"><i style="left:<%= (s - 1) / days * 100 %>%;width:<%= Math.max(1, e - s + 1) / days * 100 %>%"></i><span class="now" style="left:<%= (now.getDate() - 0.5) / days * 100 %>%"></span></div>
+      </div>
+    <% }) %>
+    <% if (!month.length) { %><div class="empty">No batches running this month.</div><% } %>
+  </div>
+</div>
+
+<div class="grid g3 mt">
+  <div class="card" data-w="attendance" data-label="Attendance & assessment">
+    <h3>Attendance & assessment</h3>
+    <div class="row between"><span>Attendance</span><b><%= pct(att.present, +att.present + +att.absent) %>% present</b></div>
+    <div class="bar g mb"><i style="width:<%= pct(att.present, +att.present + +att.absent) %>%"></i></div>
+    <div class="small muted mb"><%= att.present %> present · <%= att.absent %> absent</div>
+    <div class="row between"><span>Assessment</span><b><%= pct(att.pass, +att.pass + +att.needs_work) %>% pass</b></div>
+    <div class="bar mb"><i style="width:<%= pct(att.pass, +att.pass + +att.needs_work) %>%"></i></div>
+    <div class="small muted"><%= att.pass %> pass · <%= att.needs_work %> needs work</div>
+  </div>
+  <div class="card" data-w="load" data-label="Instructor load">
+    <h3>Instructor load</h3>
+    <% load.forEach(i => { %><div class="row between" style="padding:4px 0"><span><%= i.name %></span><span class="small muted"><%= i.sessions %> sessions · <%= mins(+i.minutes) %> flying</span></div><% }) %>
+    <% if (!load.length) { %><div class="empty">No instructors yet. <a href="/rpto/members">Add one</a></div><% } %>
+  </div>
+  <div class="card" data-w="assets" data-label="Asset utilisation">
+    <h3>Asset utilisation</h3>
+    <% assets.forEach(a => { %><div class="row between" style="padding:4px 0"><span><%= ASSET_LABEL[a.type] %></span><b><%= a.used %>/<%= a.total %></b></div><% }) %>
+    <% if (!assets.length) { %><div class="empty">No assets yet. <a href="/rpto/assets">Add assets</a></div><% } %>
+  </div>
+</div>
+
+<div class="card mt" data-w="activity" data-label="Recent activity">
+  <h3>Recent activity</h3>
+  <ul class="feed"><% recent.forEach(a => { %><li><%= a.text %> <span class="small muted">· <%= fmtDate(a.created_at) %></span></li><% }) %></ul>
+  <% if (!recent.length) { %><div class="empty">Nothing yet.</div><% } %>
+</div>
+<script>
+(() => { // dashboard panels on/off, remembered per device
+  const KEY = 'dash-hidden', read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };
+  const panels = [...document.querySelectorAll('[data-w]')], list = document.getElementById('custList');
+  const apply = () => { const h = read(); panels.forEach(p => { p.hidden = h.includes(p.dataset.w); }); };
+  panels.forEach(p => { const l = document.createElement('label'); l.className = 'row'; l.style.fontWeight = 500;
+    const i = Object.assign(document.createElement('input'), { type: 'checkbox', value: p.dataset.w, checked: !read().includes(p.dataset.w) }); l.append(i, ' ' + p.dataset.label); list.append(l); });
+  list.onchange = () => { try { localStorage.setItem(KEY, JSON.stringify([...list.querySelectorAll('input:not(:checked)')].map(i => i.value))); } catch { /* storage blocked */ } apply(); };
+  apply();
+})();
+</script>
+<%- include('../partials/end') %>

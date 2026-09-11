@@ -1,0 +1,55 @@
+<%- include('../partials/app', { title: s.title }) %>
+<% const locked = !!s.records_locked, fly = s.type === 'flying'; %>
+<div class="page-head">
+  <div><a class="small" href="/rpto/batches/<%= s.batch_id %>">← <%= s.batch_title %></a>
+    <h1><span class="pill <%= s.type %>"><%= s.type %></span> <%= s.title %></h1>
+    <div class="muted"><%= s.date %> · <%= String(s.start_time || '').slice(0, 5) %>–<%= String(s.end_time || '').slice(0, 5) %> · <span class="pill <%= s.status %>"><%= s.status %></span><%= locked ? ' · 🔒 records locked' : '' %></div></div>
+  <% if (user.isAdmin && !locked) { %><form method="post" action="/rpto/sessions/<%= s.id %>/delete" data-confirm="Delete this session and its attendance?"><button class="btn bad">Delete session</button></form><% } %>
+</div>
+
+<form class="card" method="post" action="/rpto/sessions/<%= s.id %>/attendance">
+  <h2>Attendance & assessment</h2>
+  <% if (fly) { %><div class="field" style="max-width:320px"><label>Flying field / place</label><input name="place" value="<%= (trainees.find(t => t.place) || {}).place || '' %>" placeholder="e.g. Field A"></div><% } %>
+  <div class="tbl-wrap"><table>
+    <tr><th>Trainee</th><th>Present</th><th>Assessment</th><% if (fly) { %><th>Flight minutes</th><th>Battery</th><th>Flight log</th><% } %><th>Remarks</th></tr>
+    <% trainees.forEach(t => { const present = t.present === null ? true : !!t.present; %>
+    <tr><td><b><%= t.name %></b><div class="small muted"><%= t.roll_no || '' %></div></td>
+      <td><input type="checkbox" name="present_<%= t.id %>" value="1" <%= present ? 'checked' : '' %>></td>
+      <td><select name="assess_<%= t.id %>" style="width:140px"><option value="">—</option><option value="pass" <%= t.assessment === 'pass' ? 'selected' : '' %>>Pass</option><option value="needs_work" <%= t.assessment === 'needs_work' ? 'selected' : '' %>>Needs work</option></select></td>
+      <% if (fly) { %>
+        <td><input type="number" min="0" name="minutes_<%= t.id %>" value="<%= t.minutes || '' %>" style="width:100px" placeholder="15"></td>
+        <td><select name="battery_<%= t.id %>" style="width:180px"><option value="">—</option><% assets.filter(a => a.type === 'battery').forEach(a => { %><option value="<%= a.id %>" <%= t.battery_id === a.id ? 'selected' : '' %>><%= a.name %> <%= a.serial_no || '' %></option><% }) %></select></td>
+        <td class="nowrap"><select name="track_<%= t.id %>" style="width:190px"><option value="">— none —</option><% tracks.filter(k => k.user_id === t.id).forEach(k => { %><option value="<%= k.id %>" <%= t.track_id === k.id ? 'selected' : '' %>><%= fmtDate(k.started_at || k.created_at) %> · <%= Math.round(k.duration_s / 60) %> min · <%= k.original_name.slice(0, 18) %></option><% }) %></select>
+          <% if (t.track_id) { %><a class="btn sm" href="/flights/<%= t.track_id %>">3D</a><% } %></td>
+      <% } %>
+      <td><input name="remarks_<%= t.id %>" value="<%= t.remarks || '' %>"></td></tr>
+    <% }) %>
+    <% if (!trainees.length) { %><tr><td colspan="6" class="empty">No admitted trainees in this batch.</td></tr><% } %>
+  </table></div>
+  <% if (fly) { %><p class="small muted">Flights with minutes are written to the Logbook automatically (pilot, instructor, RPAS, battery, place). Pick a flight log to link its 3D replay — minutes are taken from the log if left blank.</p><% } %>
+  <button class="btn pri mt" <%= locked || !trainees.length ? 'disabled' : '' %>>Save attendance & mark done</button>
+</form>
+<% if (fly && !locked && trainees.length) { %>
+<form class="card mt row" method="post" action="/rpto/sessions/<%= s.id %>/track" enctype="multipart/form-data" style="align-items:flex-end">
+  <div class="grow"><h2 style="margin:0 0 6px">Attach a flight log</h2><p class="small muted" style="margin:0">Upload the trainee's ArduPilot / PX4 / CSV log for this session — it's replayable in 3D and fills the flight time.</p></div>
+  <div class="field"><label>Trainee</label><select name="trainee_id" required><% trainees.forEach(t => { %><option value="<%= t.id %>"><%= t.name %></option><% }) %></select></div>
+  <div class="field"><label>Log file</label><input type="file" name="file" accept=".bin,.log,.ulg,.csv,.txt" required></div>
+  <div class="field"><button class="btn">Upload & attach</button></div>
+</form>
+<% } %>
+
+<form class="card mt" method="post" action="/rpto/sessions/<%= s.id %>">
+  <h2>Session details</h2>
+  <div class="fields">
+    <div class="field"><label>Title</label><input name="title" value="<%= s.title %>"></div>
+    <div class="field"><label>Date</label><input type="date" name="date" value="<%= s.date %>"></div>
+    <div class="field"><label>Start</label><input type="time" name="start_time" value="<%= String(s.start_time || '').slice(0, 5) %>"></div>
+    <div class="field"><label>End</label><input type="time" name="end_time" value="<%= String(s.end_time || '').slice(0, 5) %>"></div>
+    <div class="field"><label>Instructor</label><select name="instructor_id"><option value="">—</option><% instructors.forEach(i => { %><option value="<%= i.id %>" <%= s.instructor_id === i.id ? 'selected' : '' %>><%= i.name %></option><% }) %></select></div>
+    <div class="field"><label>Resource</label><select name="asset_id"><option value="">—</option><% assets.filter(a => ['rpas', 'simulator', 'classroom', 'field'].includes(a.type)).forEach(a => { %><option value="<%= a.id %>" <%= s.asset_id === a.id ? 'selected' : '' %>><%= L.ASSET_TYPES[a.type] %>: <%= a.name %></option><% }) %></select></div>
+    <div class="field"><label>Status</label><select name="status"><% ['scheduled', 'done', 'cancelled'].forEach(x => { %><option <%= s.status === x ? 'selected' : '' %>><%= x %></option><% }) %></select></div>
+    <div class="field"><label>Notes</label><input name="notes" value="<%= s.notes || '' %>"></div>
+  </div>
+  <button class="btn" <%= locked ? 'disabled' : '' %>>Save details</button>
+</form>
+<%- include('../partials/end') %>

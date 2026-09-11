@@ -1,0 +1,38 @@
+<%- include('../partials/app', { title: 'My flights' }) %>
+<% const hrs = s => mins(Math.round((s || 0) / 60)); const total = tracks.reduce((a, t) => a + t.duration_s, 0), maxM = Math.max(1, ...months.map(m => +m.s)); %>
+<div class="page-head">
+  <div><h1>My flights</h1><div class="muted">Upload a flight log to replay it in 3D. Supported: ArduPilot <code>.bin</code> / <code>.log</code>, PX4 <code>.ulg</code>, and CSV/TXT with latitude & longitude columns.</div></div>
+  <% if (limit) { %><span class="pill <%= used >= limit ? 'bad' : 'info' %>"><%= used %> / <%= limit %> free flights · <a href="/student/billing">upgrade</a></span><% } %>
+</div>
+<div class="grid g5 mb">
+  <div class="stat info"><b><%= tracks.length %></b><span>Flights logged</span></div>
+  <div class="stat"><b><%= hrs(total) %></b><span>Total flight time</span></div>
+  <div class="stat"><b><%= (tracks.reduce((a, t) => a + t.distance_m, 0) / 1000).toFixed(1) %> km</b><span>Distance flown</span></div>
+  <div class="stat"><b><%= Math.max(0, ...tracks.map(t => +t.max_alt_m)).toFixed(0) %> m</b><span>Highest altitude</span></div>
+  <div class="stat <%= tracks[0] ? 'ok' : 'warn' %>"><b><%= tracks[0] ? fmtDate(tracks[0].started_at || tracks[0].created_at) : '—' %></b><span>Last flight</span></div>
+</div>
+<div class="grid g2">
+  <form class="card" method="post" action="/flights" enctype="multipart/form-data">
+    <h2>Upload flight log</h2>
+    <div class="field"><input type="file" name="file" accept=".bin,.log,.ulg,.csv,.txt" required></div>
+    <div class="field"><label>Notes</label><input name="notes" placeholder="e.g. Practice circuits at Field A"></div>
+    <button class="btn pri">Upload & replay</button>
+    <p class="small muted mt">INAV / Betaflight blackbox logs: export them to CSV from Blackbox Explorer first.</p>
+  </form>
+  <div class="card">
+    <h2>Monthly flight time</h2>
+    <% months.forEach(m => { %><div class="row" style="gap:8px"><span class="small" style="width:60px"><%= m.ym %></span><div class="bar grow"><i style="width:<%= m.s / maxM * 100 %>%"></i></div><span class="small muted" style="width:90px"><%= m.n %> · <%= hrs(m.s) %></span></div><% }) %>
+    <% if (!months.length) { %><div class="empty">No flights yet.</div><% } %>
+  </div>
+</div>
+<div class="tbl-wrap mt"><table>
+  <tr><th>Date</th><th>File</th><th>Duration</th><th>Distance</th><th>Max alt</th><th>Max speed</th><th>Training record</th><th></th></tr>
+  <% tracks.forEach(t => { %>
+  <tr><td class="nowrap"><%= fmtDate(t.started_at || t.created_at) %></td><td class="small"><%= t.original_name %><div class="muted"><%= t.format %><%= t.notes ? ' · ' + t.notes : '' %></div></td>
+    <td><%= hrs(t.duration_s) %></td><td><%= t.distance_m %> m</td><td><%= t.max_alt_m %> m</td><td><%= t.max_speed %> m/s</td>
+    <td class="small"><%= t.log_id ? t.activity : '—' %></td>
+    <td class="right nowrap"><a class="btn sm pri" href="/flights/<%= t.id %>">3D replay</a></td></tr>
+  <% }) %>
+  <% if (!tracks.length) { %><tr><td colspan="8" class="empty">Upload your first flight log above.</td></tr><% } %>
+</table></div>
+<%- include('../partials/end') %>

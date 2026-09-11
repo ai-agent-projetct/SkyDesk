@@ -1,0 +1,49 @@
+<%# Syllabus editor. Locals: base (URL prefix), syllabus (effective list), custom (bool: rows belong to this owner), platform (bool) %>
+<% const editable = platform || custom, sections = ['theory', 'workshop', 'simulator', 'flying', 'test'], totals = {};
+   syllabus.forEach(s => totals[s.section] = (totals[s.section] || 0) + s.minutes); %>
+<div class="row mb">
+  <span class="grow small muted"><%= platform ? 'The default syllabus every RPTO starts with. Auto-schedule turns it into classes and per-trainee slots.' : custom ? 'Your own syllabus — used when you auto-schedule a batch.' : 'You are using the platform default syllabus. Customise it to add, edit or remove items.' %></span>
+  <a class="btn sm" href="<%= base %>/syllabus.csv">Export CSV</a>
+  <% if (!editable) { %><form class="inline" method="post" action="<%= base %>/syllabus/customise"><button class="btn sm pri">Customise</button></form><% } %>
+  <% if (!platform && custom) { %><form class="inline" method="post" action="<%= base %>/syllabus/reset" data-confirm="Delete your syllabus and go back to the platform default?"><button class="btn sm">Reset to default</button></form><% } %>
+</div>
+<div class="grid g5 mb"><% sections.forEach(s => { %><div class="stat"><b><%= mins(totals[s] || 0) %></b><span><%= s %> · <%= syllabus.filter(x => x.section === s).length %> items</span></div><% }) %></div>
+<% if (editable) { %>
+<div class="grid g2 mb">
+  <form class="card" method="post" action="<%= base %>/syllabus">
+    <h2>Add item</h2>
+    <div class="fields">
+      <div class="field"><label>Code *</label><input name="code" maxlength="20" required placeholder="e.g. F17"></div>
+      <div class="field"><label>Section *</label><select name="section"><% sections.forEach(s => { %><option><%= s %></option><% }) %></select></div>
+      <div class="field"><label>Minutes</label><input type="number" name="minutes" min="5" max="600" value="60"></div>
+      <div class="field"><label><input type="checkbox" name="needs_log" value="1"> Needs a flight log</label></div>
+    </div>
+    <div class="field"><label>Title *</label><input name="title" maxlength="200" required></div>
+    <button class="btn pri">Add</button>
+  </form>
+  <form class="card" method="post" action="<%= base %>/syllabus/import" enctype="multipart/form-data" data-confirm="This replaces the whole syllabus with the file's rows. Continue?">
+    <h2>Import CSV (replace)</h2>
+    <p class="small muted">Columns: <code>code, section, title, minutes, needs_log</code>. Section is one of <%= sections.join(', ') %>. Export first to get a template.</p>
+    <div class="field"><input type="file" name="file" accept=".csv,text/csv" required></div>
+    <button class="btn">Upload & replace</button>
+  </form>
+</div>
+<% } %>
+<div class="tbl-wrap"><table>
+  <tr><th>Code</th><th>Section</th><th>Title</th><th>Minutes</th><th>Flight log</th><% if (editable) { %><th></th><% } %></tr>
+  <% syllabus.forEach(s => { %><tr><td><b><%= s.code %></b></td><td><span class="pill"><%= s.section %></span></td><td><%= s.title %></td><td><%= s.minutes %></td><td><%= s.needs_log ? '✓' : '' %></td>
+    <% if (editable) { %><td class="nowrap"><button class="btn sm" data-open="syl<%= s.id %>">Edit</button>
+      <form class="inline" method="post" action="<%= base %>/syllabus/<%= s.id %>/delete" data-confirm="Delete <%= s.code %>?"><button class="btn sm bad">×</button></form>
+      <dialog id="syl<%= s.id %>"><form method="post" action="<%= base %>/syllabus/<%= s.id %>">
+        <h2>Edit <%= s.code %></h2>
+        <div class="fields">
+          <div class="field"><label>Code</label><input name="code" value="<%= s.code %>" maxlength="20" required></div>
+          <div class="field"><label>Section</label><select name="section"><% sections.forEach(x => { %><option <%= x === s.section ? 'selected' : '' %>><%= x %></option><% }) %></select></div>
+          <div class="field"><label>Minutes</label><input type="number" name="minutes" min="5" max="600" value="<%= s.minutes %>"></div>
+          <div class="field"><label><input type="checkbox" name="needs_log" value="1" <%= s.needs_log ? 'checked' : '' %>> Needs a flight log</label></div>
+        </div>
+        <div class="field"><label>Title</label><input name="title" value="<%= s.title %>" maxlength="200" required></div>
+        <div class="row"><button class="btn pri">Save</button><button type="button" class="btn" data-close>Cancel</button></div>
+      </form></dialog></td><% } %></tr><% }) %>
+  <% if (!syllabus.length) { %><tr><td colspan="6" class="empty">No syllabus items.</td></tr><% } %>
+</table></div>

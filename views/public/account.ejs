@@ -1,0 +1,96 @@
+<%- include('../partials/app', { title: 'My account' }) %>
+<div class="page-head"><div><h1>My account</h1><div class="muted"><%= user.email %></div></div></div>
+<div class="grid g2">
+  <div class="card">
+    <h2>Profile photo</h2>
+    <div class="row">
+      <span class="avatar" style="width:64px;height:64px;font-size:32px"><% if (user.avatar && user.avatar.includes('.')) { %><img src="/files/<%= user.avatar %>" alt=""><% } else { %><%= user.avatar || user.name[0] %><% } %></span>
+      <form method="post" action="/account/avatar" enctype="multipart/form-data" class="row"><input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" required style="width:220px"><button class="btn sm">Upload</button></form>
+    </div>
+    <form method="post" action="/account/avatar" class="row mt" style="gap:4px">
+      <% AVATARS.forEach(a => { %><button class="btn sm" name="emoji" value="<%= a %>" style="font-size:18px;padding:4px 8px"><%= a %></button><% }) %>
+    </form>
+  </div>
+  <form class="card" method="post" action="/account/password">
+    <h2>Security</h2>
+    <div class="field"><label>Current password</label><input type="password" name="current" required autocomplete="current-password"></div>
+    <div class="field"><label>New password (min 8)</label><input type="password" name="password" minlength="8" required autocomplete="new-password"></div>
+    <div class="row"><button class="btn">Update password</button>
+      <button class="btn" formaction="/account/signout-all" formnovalidate data-confirm="Sign out of every other device?">Sign out of all other devices</button></div>
+    <p class="mt" style="margin-bottom:0">Two-step verification: <span class="pill <%= user.totp_enabled ? 'ok' : 'warn' %>"><%= user.totp_enabled ? 'On' : 'Off' %></span> <a href="/account/2fa"><%= user.totp_enabled ? 'Manage' : 'Turn on' %></a></p>
+  </form>
+</div>
+<form class="card mt" method="post" action="/account">
+  <h2>Profile</h2>
+  <div class="fields">
+    <div class="field"><label>Full name</label><input name="name" value="<%= user.name %>" required></div>
+    <div class="field"><label>Mobile (with country code)</label><input name="phone" value="<%= user.phone || '' %>" placeholder="+91 90000 00000"></div>
+    <div class="field"><label>Email</label><input value="<%= user.email %>" disabled></div>
+    <div class="field"><label>Regulator</label><select name="regulator"><% ['DGCA', 'FAA', 'CAA', 'EASA', 'Other'].forEach(x => { %><option <%= user.regulator === x ? 'selected' : '' %>><%= x %></option><% }) %></select></div>
+  </div>
+  <label class="row" style="font-weight:500"><input type="checkbox" name="is_pilot" value="1" <%= user.is_pilot ? 'checked' : '' %> onchange="document.getElementById('lic').hidden = !this.checked"> I am a registered remote pilot</label>
+  <div class="fields mt" id="lic" <%= user.is_pilot ? '' : 'hidden' %>>
+    <div class="field"><label>Remote pilot licence / RPC no.</label><input name="license_no" value="<%= user.license_no || '' %>"></div>
+    <div class="field"><label>Licence expiry</label><input type="date" name="license_expiry" value="<%= user.license_expiry || '' %>"></div>
+  </div>
+  <% if (user.role === 'student') { %>
+    <div class="fields mt">
+      <div class="field"><label>Date of birth</label><input type="date" name="dob" value="<%= user.dob || '' %>"></div>
+      <div class="field"><label>Gender</label><select name="gender"><% ['', 'Male', 'Female', 'Other'].forEach(g => { %><option <%= user.gender === g ? 'selected' : '' %>><%= g %></option><% }) %></select></div>
+      <div class="field"><label>Father's / guardian's name</label><input name="father_name" value="<%= user.father_name || '' %>"></div>
+    </div>
+    <div class="field"><label>Address</label><textarea name="address" rows="2"><%= user.address || '' %></textarea></div>
+    <p class="small muted">These details appear on your training record and certificate.</p>
+  <% } %>
+  <button class="btn pri">Save profile</button>
+</form>
+<% if (user.role === 'member') { %>
+<form class="card mt" method="post" action="/account/signature" enctype="multipart/form-data">
+  <h2>My signature</h2>
+  <p class="small muted">Printed on course certificates when you are the RPA trainer. Sign on white paper, photograph or scan it, and crop tightly (PNG with a transparent background looks best).</p>
+  <div class="row">
+    <% if (user.signature) { %><img src="/files/<%= user.signature %>" alt="Your signature" style="max-height:60px;border:1px solid var(--line);border-radius:8px;padding:4px;background:#fff"><% } %>
+    <input type="file" name="signature" accept=".png,.jpg,.jpeg,.webp" style="width:240px"><button class="btn sm"><%= user.signature ? 'Replace' : 'Upload' %></button>
+    <% if (user.signature) { %><button class="btn sm bad" name="remove" value="1" formnovalidate data-confirm="Remove your signature?">Remove</button><% } %>
+  </div>
+</form>
+<% } %>
+<div class="grid g2 mt">
+  <div class="card">
+    <h2>RPC & certificates</h2>
+    <% const certs = training.filter(t => t.cert_no); %>
+    <% if (user.license_no) { %><p><b>Licence:</b> <%= user.license_no %> (<%= user.regulator %>)<%= user.license_expiry ? ' · expires ' + fmtDate(user.license_expiry) : '' %>
+      <% if (user.license_expiry && user.license_expiry < today) { %><span class="pill bad">expired</span><% } %></p><% } %>
+    <div class="tbl-wrap"><table><tr><th>Course</th><th>Certificate</th><th>RPC</th></tr>
+      <% certs.forEach(c => { %><tr><td><%= c.batch %><div class="small muted"><%= c.rpto %></div></td>
+        <td><a target="_blank" href="/student/certificate/<%= c.id %>"><%= c.cert_no %></a><div class="small muted"><%= fmtDate(c.cert_issued_at) %></div></td><td><%= c.rpc_no || '—' %></td></tr><% }) %>
+      <% if (!certs.length) { %><tr><td colspan="3" class="empty">No certificates yet.</td></tr><% } %>
+    </table></div>
+  </div>
+  <div class="card">
+    <h2>Memberships</h2>
+    <p class="small muted">Organisations you belong to and your role in each.</p>
+    <% memberships.forEach(m => { %><div class="row between" style="padding:6px 0;border-bottom:1px solid var(--line)"><div><b><%= m.name %></b><div class="small muted"><%= m.roles %> · <%= m.city %></div></div><span class="pill <%= m.status %>"><%= m.status %></span></div><% }) %>
+    <% training.filter(t => !t.cert_no).forEach(t => { %><div class="row between" style="padding:6px 0;border-bottom:1px solid var(--line)"><div><b><%= t.rpto %></b><div class="small muted">Trainee · <%= t.batch || 'no batch yet' %></div></div><span class="pill <%= t.status %>"><%= t.status %></span></div><% }) %>
+    <% if (!memberships.length && !training.length) { %><div class="empty">No memberships.</div><% } %>
+  </div>
+</div>
+<% if (user.role !== 'super_admin') { %>
+<div class="grid g2 mt">
+  <div class="card">
+    <h2>Download my data</h2>
+    <p class="small muted">A ZIP with your profile, applications, attendance, results, fees, flights and logbook as JSON, plus the documents and flight logs you uploaded.</p>
+    <a class="btn" href="/account/export">Download ZIP</a>
+  </div>
+  <form class="card" method="post" action="/account/delete" data-confirm="Delete your account permanently? This cannot be undone.">
+    <h2>Delete account</h2>
+    <p class="small muted">Removes your personal details and uploaded files and signs you out. Training records an RPTO must keep by law (attendance, results, certificates) stay, without your contact details.</p>
+    <div class="fields">
+      <div class="field"><label>Type DELETE</label><input name="confirm" required pattern="DELETE" autocomplete="off"></div>
+      <div class="field"><label>Current password</label><input type="password" name="password" required autocomplete="current-password"></div>
+    </div>
+    <button class="btn bad">Delete my account</button>
+  </form>
+</div>
+<% } %>
+<%- include('../partials/end') %>

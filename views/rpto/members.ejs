@@ -1,0 +1,28 @@
+<%- include('../partials/app', { title: 'Members' }) %>
+<div class="page-head">
+  <div><h1>Members</h1><div class="muted"><%= user.rpto.name %> — add instructors and managers by email. One person can hold several roles (e.g. Admin + Instructor) — add them again with the other role. Only instructors with a DGCA certificate can be assigned to training. Trainees are managed under Admissions.</div></div>
+  <span class="pill <%= used >= limit ? 'bad' : 'info' %>"><%= used %> / <%= limit %> staff logins</span>
+</div>
+<form class="card mb row" method="post" action="/rpto/members" enctype="multipart/form-data" style="align-items:flex-end">
+  <div class="field grow"><label>Email *</label><input type="email" name="email" placeholder="person@example.com" required></div>
+  <div class="field grow"><label>Name (for new people)</label><input name="name"></div>
+  <div class="field"><label>Role</label><select name="role"><% L.MEMBER_ROLES.forEach(r => { %><option><%= r %></option><% }) %></select></div>
+  <div class="field"><label>DGCA instructor certificate</label><input type="file" name="cert" accept=".pdf,.jpg,.jpeg,.png,.webp"></div>
+  <div class="field"><button class="btn pri" <%= used >= limit ? 'title="Limit reached — existing people can still get extra roles"' : '' %>>Add</button></div>
+</form>
+<div class="tbl-wrap"><table>
+  <tr><th>Name</th><th>Email</th><th>Role</th><th>DGCA certificate</th><th></th></tr>
+  <% members.forEach(m => { %>
+  <tr><td><b><%= m.name %></b><% if (!m.active) { %> <span class="pill bad">disabled</span><% } %></td><td><%= m.email %></td><td><span class="pill"><%= m.role %></span></td>
+    <td><% if (m.role === 'Instructor') { %>
+      <% if (m.dgca_cert) { %><span class="pill ok">Eligible</span> <a class="small" href="/files/<%= m.dgca_cert %>" target="_blank">view</a>
+        <form class="inline" method="post" action="/rpto/members/<%= m.id %>/cert/remove" data-confirm="Remove <%= m.name %>'s instructor certificate? They can't be assigned to training without one."><button class="btn sm bad">Remove</button></form>
+      <% } else { %><span class="pill warn">Missing</span><% } %>
+      <form class="inline" method="post" action="/rpto/members/<%= m.id %>/cert" enctype="multipart/form-data"><input type="file" name="cert" accept=".pdf,.jpg,.jpeg,.png,.webp" required style="width:190px"> <button class="btn sm"><%= m.dgca_cert ? 'Replace' : 'Upload' %></button></form>
+    <% } else { %>—<% } %></td>
+    <td class="right nowrap">
+      <% if (m.user_id !== user.id) { %><form class="inline" method="post" action="/rpto/users/<%= m.user_id %>/password" data-confirm="Reset the password for <%= m.email %>? They will be signed out."><button class="btn sm">Reset password</button></form><% } %>
+      <form class="inline" method="post" action="/rpto/members/<%= m.id %>/remove" data-confirm="Remove the <%= m.role %> role from <%= m.name %>?"><button class="btn sm bad">Remove</button></form></td></tr>
+  <% }) %>
+</table></div>
+<%- include('../partials/end') %>

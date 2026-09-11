@@ -1,0 +1,49 @@
+<%- include('../partials/app', { title: 'Batches' }) %>
+<div class="page-head">
+  <div><h1>Batches</h1><div class="muted"><%= user.rpto.name %> — course runs, timetables and enrolment.</div></div>
+  <div class="row">
+    <a class="btn sm <%= view === 'grid' ? 'pri' : '' %>" href="/rpto/batches">Grid</a><a class="btn sm <%= view === 'list' ? 'pri' : '' %>" href="/rpto/batches?view=list">List</a>
+    <% if (user.isAdmin) { %><a class="btn pri" href="/rpto/batches/new">+ New batch</a><% } %>
+  </div>
+</div>
+
+<details class="alert <%= min.ok ? 'ok' : 'warn' %>" <%= min.ok ? '' : 'open' %>>
+  <summary><%= min.ok ? '✓ Training resources ready — all seven minimums met' : '⚠ Training resources incomplete — some minimums are not met' %></summary>
+  <div class="grid g5 mt">
+    <% min.list.forEach(m => { %><div class="stat <%= m.ok ? 'ok' : 'warn' %>"><b><%= m.have %> / <%= m.min %></b><span><%= m.label %></span></div><% }) %>
+  </div>
+  <div class="small mt">Add equipment under <a href="/rpto/assets">Assets</a> and certified instructors under <a href="/rpto/members">Members</a>.</div>
+</details>
+
+<% if (unmarked) { %>
+<div class="card mb">
+  <h2>Sessions waiting for attendance (<%= unmarked.length %>)</h2>
+  <div class="tbl-wrap"><table><tr><th>Date</th><th>Batch</th><th>Session</th><th></th></tr>
+    <% unmarked.forEach(s => { %><tr><td><%= s.date %> <%= String(s.start_time || '').slice(0, 5) %></td><td><%= s.batch %></td><td><span class="pill <%= s.type %>"><%= s.type %></span> <%= s.title %></td><td class="right"><a class="btn sm pri" href="/rpto/sessions/<%= s.id %>">Mark attendance</a></td></tr><% }) %>
+    <% if (!unmarked.length) { %><tr><td colspan="4" class="empty">All caught up.</td></tr><% } %>
+  </table></div>
+</div>
+<% } %>
+
+<% ['active', 'planned', 'completed', 'cancelled'].forEach(st => { const list = batches.filter(b => b.status === st); if (!list.length) return; %>
+  <h2 class="mt" style="text-transform:capitalize"><%= st %> <span class="muted">(<%= list.length %>)</span></h2>
+  <% if (view === 'grid') { %>
+  <div class="grid g3">
+    <% list.forEach(b => { %>
+    <a class="card" href="/rpto/batches/<%= b.id %>" style="color:inherit;text-decoration:none">
+      <div class="row between"><b style="font-size:16px"><%= b.title %></b><span class="pill <%= b.status %>"><%= b.status %></span></div>
+      <div class="small muted"><%= b.certificate %> · <%= b.rpas_category %> · <%= b.delivery %> · <span class="pill ok"><%= b.admitted %> admitted</span></div>
+      <div class="row mt" style="gap:4px"><div class="bar grow" title="Ground classes"><i style="width:100%;background:#93c5fd;opacity:<%= b.ground ? 1 : .2 %>"></i></div><div class="bar grow" title="Practical"><i style="width:100%;background:#6ee7b7;opacity:<%= b.practical ? 1 : .2 %>"></i></div></div>
+      <div class="row between small mt"><div class="bar grow"><i style="width:<%= b.total ? b.done / b.total * 100 : 0 %>%"></i></div><span class="muted"><%= b.done %>/<%= b.total %> done</span></div>
+      <div class="row between small"><div class="bar g grow"><i style="width:<%= b.admitted / b.seats * 100 %>%"></i></div><span class="muted"><%= b.admitted %>/<%= b.seats %> seats</span></div>
+    </a>
+    <% }) %>
+  </div>
+  <% } else { %>
+  <div class="tbl-wrap"><table><tr><th>Batch</th><th>Course</th><th>Dates</th><th>Seats</th><th>Sessions</th><th>Accepting</th></tr>
+    <% list.forEach(b => { %><tr><td><a href="/rpto/batches/<%= b.id %>"><b><%= b.title %></b></a></td><td class="small"><%= b.certificate %> · <%= b.rpas_category %> · <%= b.delivery %></td><td class="small"><%= fmtDate(b.start_date) %> – <%= fmtDate(b.end_date) %></td><td><%= b.admitted %>/<%= b.seats %></td><td><%= b.done %>/<%= b.total %></td><td><%= b.accepting ? 'Yes' : 'No' %></td></tr><% }) %>
+  </table></div>
+  <% } %>
+<% }) %>
+<% if (!batches.length) { %><div class="card empty">No batches yet.<% if (user.isAdmin) { %> <a href="/rpto/batches/new">Create your first batch</a>.<% } %></div><% } %>
+<%- include('../partials/end') %>

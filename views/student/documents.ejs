@@ -1,0 +1,31 @@
+<%- include('../partials/app', { title: 'My documents' }) %>
+<div class="page-head"><div><h1>My documents</h1><div class="muted">Required for admission. PDF, JPG, PNG or WEBP up to 5 MB. Verified documents are locked.</div></div></div>
+<% if (!consent) { %>
+<form class="card mb" method="post" action="/student/documents/consent" style="max-width:760px">
+  <h2>Before you upload</h2>
+  <p class="small">Your documents are stored privately. Only you, the RPTO(s) you apply to and the platform admin can open them. RPTOs use them to check your eligibility and to submit your training record to the regulator. Files are deleted automatically once your Remote Pilot Certificate is recorded, and you can download or delete your data at any time from My account.</p>
+  <label class="row" style="font-weight:500"><input type="checkbox" name="agree" value="1" required> I agree to share these documents with the RPTOs I apply to, for admission and certification.</label>
+  <button class="btn pri mt">Continue</button>
+</form>
+<% } %>
+<div class="tbl-wrap"><table>
+  <tr><th>Document</th><th>Uploaded file</th><th>Status</th><th>Upload</th></tr>
+  <% L.docRows(docs).forEach(([k, label, d]) => { %>
+  <tr><td><b><%= label %></b><% if (L.TRAINEE_DOC_HELP[k]) { %><div class="small muted"><%= L.TRAINEE_DOC_HELP[k] %></div><% } %></td>
+    <td><% if (d && d.file) { %><a href="/files/<%= d.file %>" target="_blank"><%= d.original_name || 'View' %></a><div class="small muted"><%= fmtDate(d.uploaded_at) %></div><% } else if (d && d.status === 'purged') { %><span class="muted small">Deleted after your RPC</span><% } else { %><span class="muted">—</span><% } %></td>
+    <td><span class="pill <%= d ? d.status : '' %>"><%= d ? d.status : 'missing' %></span><% if (d && d.note) { %><div class="small" style="color:var(--bad)"><%= d.note %></div><% } %></td>
+    <td class="nowrap"><% if (!consent) { %><span class="small muted">Give consent first</span>
+      <% } else if (!d || !['verified', 'purged'].includes(d.status)) { %><form class="inline" method="post" action="/student/documents/<%= k %>" enctype="multipart/form-data"><input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.webp" required style="width:220px"><button class="btn sm pri"><%= d ? 'Replace' : 'Upload' %></button></form>
+        <% if (d && k.startsWith('other_')) { %><form class="inline" method="post" action="/student/documents/<%= k %>/delete" data-confirm="Remove <%= label %>?"><button class="btn sm bad">×</button></form><% } %>
+      <% } else { %><span class="small muted">Locked</span><% } %></td></tr>
+  <% }) %>
+</table></div>
+<% if (consent) { %>
+<form class="card mt row" method="post" action="/student/documents/other" enctype="multipart/form-data" style="align-items:flex-end;max-width:760px">
+  <div class="field grow"><label>Add another document (optional)</label><input name="label" maxlength="100" required placeholder="e.g. Driving licence, previous RPC"></div>
+  <div class="field"><input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.webp" required style="width:220px"></div>
+  <div class="field"><button class="btn">Add</button></div>
+</form>
+<% } %>
+<p class="small muted mt">Also complete your date of birth, guardian's name and address under <a href="/account">My account</a> — they appear on your certificate.</p>
+<%- include('../partials/end') %>

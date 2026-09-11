@@ -1,0 +1,49 @@
+<%- include('../partials/app', { title: 'Plans & billing' }) %>
+<% const pro = user.pro_until && user.pro_until >= today; %>
+<div class="page-head"><div><h1>Plans & billing</h1><div class="muted">Your plan covers personal flight logging and 3D replay. Training at your RPTO is not affected by your plan.</div></div></div>
+<div class="grid g3">
+  <div class="card" style="<%= pro ? '' : 'border-color:var(--pri)' %>">
+    <b>Free</b> <% if (!pro) { %><span class="pill info">current</span><% } %>
+    <div class="price">₹0</div>
+    <ul class="small muted"><li><%= limit %> flight uploads (<%= used %> used)</li><li>3D replay & telemetry</li><li>Training record & certificates</li><li>Practice simulator</li></ul>
+  </div>
+  <% Object.entries(PLANS).forEach(([k, p]) => { %>
+  <div class="card" style="<%= pro ? 'border-color:var(--ok)' : '' %>">
+    <b><%= p.label %></b> <% if (k === 'pro_year') { %><span class="pill ok">2 months free</span><% } %>
+    <div class="price">₹<%= p.rupees.toLocaleString('en-IN') %><span class="small muted"> / <%= p.months === 1 ? 'month' : 'year' %></span></div>
+    <ul class="small muted"><li>Unlimited flight uploads</li><li>Full flight history & monthly analytics</li><li>Everything in Free</li></ul>
+    <% if (keyId) { %><button class="btn pri" data-plan="<%= k %>"><%= pro ? 'Extend' : 'Upgrade' %></button><% } else { %><button class="btn" disabled title="Online payments are not configured on this server">Upgrade</button><% } %>
+  </div>
+  <% }) %>
+</div>
+<p class="small muted mt">Prices include GST.</p>
+<% if (pro) { %><div class="alert ok mt">Pilot Pro is active until <b><%= fmtDate(user.pro_until) %></b>.</div><% } %>
+<% if (!keyId) { %><p class="small muted mt">Online payments aren't enabled yet. Ask the platform admin to activate Pilot Pro for you.</p><% } %>
+<div class="card mt">
+  <h2>Payment history</h2>
+  <div class="tbl-wrap"><table><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Status</th><th>Order / payment ID</th></tr>
+    <% payments.forEach(p => { %><tr><td><%= fmtDate(p.paid_at || p.created_at) %></td><td><%= (PLANS[p.plan] || {}).label || p.plan %></td><td><%= money(p.amount_paise / 100) %></td>
+      <td><span class="pill <%= p.status === 'paid' ? 'ok' : p.status === 'failed' ? 'bad' : '' %>"><%= p.status %></span></td><td class="small"><%= p.order_id %><br><%= p.payment_id || '' %></td></tr><% }) %>
+    <% if (!payments.length) { %><tr><td colspan="5" class="empty">No payments yet.</td></tr><% } %>
+  </table></div>
+</div>
+<form id="verify" method="post" action="/student/billing/verify" hidden>
+  <input name="razorpay_order_id"><input name="razorpay_payment_id"><input name="razorpay_signature">
+</form>
+<% if (keyId) { %>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.querySelectorAll('[data-plan]').forEach(b => b.onclick = async () => {
+  b.disabled = true;
+  const r = await fetch('/student/billing/order', { method: 'POST', body: new URLSearchParams({ plan: b.dataset.plan }) });
+  const o = await r.json(); b.disabled = false;
+  if (!r.ok) return alert(o.error || 'Could not start payment');
+  new Razorpay({ ...o, theme: { color: '#1d6fe8' }, handler: resp => {
+    const f = document.getElementById('verify');
+    for (const k of ['razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature']) f.elements[k].value = resp[k];
+    f.submit();
+  } }).open();
+});
+</script>
+<% } %>
+<%- include('../partials/end') %>

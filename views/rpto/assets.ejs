@@ -1,0 +1,45 @@
+<%- include('../partials/app', { title: 'Assets' }) %>
+<div class="page-head"><div><h1>Assets</h1><div class="muted"><%= user.rpto.name %> — equipment & facilities. The auto-scheduler only uses in-service units. Instructors are managed under Members.</div></div></div>
+<% Object.entries(L.ASSET_TYPES).forEach(([type, label]) => { const list = assets.filter(a => a.type === type); const units = list.filter(a => a.status === 'in_service').reduce((t, a) => t + (['charger', 'classroom', 'simulator'].includes(type) ? a.quantity || 1 : 1), 0); %>
+<div class="card mb" id="<%= type %>">
+  <div class="row between"><h2 style="margin:0"><%= label %> <span class="muted small"><%= units %> in service</span></h2>
+    <% if (user.isAdmin) { %><button class="btn sm pri" data-open="add-<%= type %>">+ Add</button><% } %></div>
+  <% list.forEach(a => { const cycles = (a.initial_cycles || 0) + a.flights_on; %>
+    <div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line)">
+      <div><b><%= a.name %></b><% if (a.quantity > 1) { %> <span class="pill">×<%= a.quantity %></span><% } %>
+        <div class="small muted"><%= [a.make, a.category, type === 'rpas' ? (a.type_certified ? 'Type certified ✓' : 'Not type certified') : null, a.rpas_class, a.uin ? 'UIN ' + a.uin : null, a.serial_no ? 'S/N ' + a.serial_no : null,
+          a.batteries_per_flight ? a.batteries_per_flight + ' batteries / flight' : null, type === 'rpas' ? a.rpas_flights + ' flights' : null,
+          a.capacity_mah ? a.capacity_mah + ' mAh' : null, a.voltage ? a.voltage + ' V' : null, type === 'battery' ? `${cycles}${a.max_cycles ? '/' + a.max_cycles : ''} cycles` : null,
+          a.capacity_seats ? a.capacity_seats + ' seats each' : null, a.location, a.acquired_on, a.notes].filter(Boolean).join(' · ') %></div>
+        <% if (type === 'battery' && a.max_cycles && cycles >= a.max_cycles * 0.9) { %><span class="pill <%= cycles >= a.max_cycles ? 'bad' : 'warn' %>"><%= cycles >= a.max_cycles ? 'retire' : 'near end of life' %></span><% } %></div>
+      <div class="row">
+        <% if (['rpas', 'battery'].includes(type)) { %><a class="btn sm" target="_blank" href="/rpto/logbook/asset/<%= a.id %>">Logbook</a><% } %>
+        <% if (user.isAdmin) { %>
+        <button class="btn sm" data-open="edit-<%= a.id %>">Edit</button>
+        <form class="inline row" method="post" action="/rpto/assets/<%= a.id %>" style="flex-wrap:nowrap">
+          <select name="status" style="width:140px" onchange="this.form.submit()"><% [['in_service', 'In service'], ['maintenance', 'Maintenance'], ['retired', 'Retired']].forEach(([v, l]) => { %><option value="<%= v %>" <%= a.status === v ? 'selected' : '' %>><%= l %></option><% }) %></select>
+          <input type="hidden" name="notes" value="<%= a.notes || '' %>">
+        </form>
+        <form class="inline" method="post" action="/rpto/assets/<%= a.id %>/delete" data-confirm="Delete <%= a.name %>?"><button class="btn sm bad">×</button></form>
+        <% } else { %><span class="pill <%= a.status %>"><%= a.status.replace('_', ' ') %></span><% } %>
+      </div>
+    </div>
+    <% if (user.isAdmin) { %>
+    <dialog id="edit-<%= a.id %>"><form method="post" action="/rpto/assets/<%= a.id %>/edit">
+      <h2>Edit <%= a.name %></h2>
+      <%- include('_assetfields', { type, a }) %>
+      <div class="row"><button class="btn pri">Save</button><button type="button" class="btn" data-close>Cancel</button></div>
+    </form></dialog>
+    <% } %>
+  <% }) %>
+  <% if (!list.length) { %><div class="empty">None added yet.</div><% } %>
+</div>
+<dialog id="add-<%= type %>"><form method="post" action="/rpto/assets">
+  <input type="hidden" name="type" value="<%= type %>">
+  <h2>Add <%= label.toLowerCase().replace(/s$/, '') %></h2>
+  <%- include('_assetfields', { type, a: null }) %>
+  <label class="row" style="font-weight:500"><input type="checkbox" name="in_service" value="1" checked> In service</label>
+  <div class="row mt"><button class="btn pri">Add</button><button type="button" class="btn" data-close>Cancel</button></div>
+</form></dialog>
+<% }) %>
+<%- include('../partials/end') %>

@@ -1,0 +1,81 @@
+<%- include('partials/app', { title: 'Practice simulator' }) %>
+<style>
+.simwrap{position:relative;border-radius:12px;overflow:hidden;background:#0b1324}
+#sim{width:100%;height:min(64vh,580px);display:block}
+.hud{position:absolute;top:10px;left:10px;background:rgba(11,19,36,.72);color:#e2e8f0;border-radius:10px;padding:10px 14px;max-width:min(430px,70%);font-size:13px}
+.hud b{color:#fff}.hud .grid{grid-template-columns:repeat(4,auto);gap:2px 14px;margin-top:6px}
+.sticks{position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:space-between;padding:0 14px;pointer-events:none}
+.stick{width:78px;height:78px;border-radius:12px;background:rgba(11,19,36,.55);border:1px solid rgba(255,255,255,.3);position:relative}
+.stick i{position:absolute;width:14px;height:14px;border-radius:50%;background:#fbbf24;transform:translate(-50%,-50%);left:50%;top:50%}
+.stick span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:10px;color:#cbd5e1}
+</style>
+<div class="page-head">
+  <div><h1>Practice simulator</h1><div class="muted">Drill take-off, hover, patterns, spraying, gates and landing in your browser. Mode-2 keyboard: <b>W/S</b> throttle · <b>A/D</b> yaw · <b>↑/↓</b> forward/back · <b>←/→</b> left/right ·
+    arm = hold <b>S + D</b> (disarm <b>S + A</b>) · <b>1/2/3</b> Stabilize / AltHold / Loiter · <b>T</b> take-off · <b>R</b> return home · <b>Space</b> restart — or plug in a USB transmitter / gamepad.</div></div>
+</div>
+<div class="grid" style="grid-template-columns:minmax(0,3fr) minmax(260px,1fr)">
+  <div>
+    <div class="simwrap">
+      <canvas id="sim" tabindex="0"></canvas>
+      <div class="hud"><b id="exName">Choose a drill</b><div id="instr" class="small"></div>
+        <div class="grid"><span>Alt <b id="hAlt">0</b></span><span>Speed <b id="hSpd">0</b></span><span>Hdg <b id="hHdg">0</b></span><span>Dist <b id="hDist">0</b></span>
+          <span>Mode <b id="hMode">—</b></span><span><b id="hArm">Disarmed</b></span><span>Battery <b id="hBat">100%</b></span><span></span></div>
+        <div class="small">Time <b id="hTime">—</b> <span id="hExtra"></span></div></div>
+      <div class="sticks"><div class="stick"><i id="stickL"></i><span>throttle / yaw</span></div><div class="stick"><i id="stickR"></i><span>pitch / roll</span></div></div>
+    </div>
+    <div class="row mt" style="flex-wrap:wrap">
+      <% [['stabilize', '1 · Stabilize'], ['althold', '2 · AltHold'], ['loiter', '3 · Loiter']].forEach(([k, l]) => { %><button class="btn sm" data-mode="<%= k %>"><%= l %></button><% }) %>
+      <span class="grow"></span>
+      <button class="btn sm" id="armBtn">Arm / disarm</button><button class="btn sm" id="takeoffBtn">⤒ Take-off (T)</button><button class="btn sm" id="rtlBtn">⌂ Return home (R)</button>
+    </div>
+    <p class="small muted mt">A simplified flight model for orientation and stick practice — Loiter holds position, AltHold holds height only, Stabilize holds neither. It does not replace training on your RPTO's approved simulator.</p>
+  </div>
+  <div>
+    <div class="card mb">
+      <h2>Drills</h2>
+      <div class="grid" style="gap:6px">
+        <% [['hover', 'Take-off, hover & land'], ['square', 'Square pattern (10 m)'], ['eight', 'Figure-8'], ['agri', 'Agri spray field'], ['gates', 'FPV gate course'], ['free', 'Free flight']].forEach(([k, l]) => { %><button class="btn" data-ex="<%= k %>"><%= l %></button><% }) %>
+      </div>
+      <div class="row mt" style="flex-wrap:wrap"><button class="btn" id="demoBtn">▶ Watch demo</button><button class="btn" id="resetBtn">↺ Restart (Space)</button><button class="btn" id="replayBtn" disabled>⟲ Replay last run</button></div>
+      <% if (test) { %>
+        <div class="alert warn mt"><b><%= test.title %></b> is open: all three drills back to back within 15 minutes. <button class="btn sm pri mt" id="testBtn">Start simulator test</button></div>
+      <% } %>
+    </div>
+    <div class="card mb">
+      <h2>Settings</h2>
+      <div class="field"><label>View</label><select id="viewSel"><option value="pilot">Pilot's eye (VLOS)</option><option value="chase">Chase camera</option><option value="top">Top-down</option><option value="fpv">FPV (camera on the drone)</option></select></div>
+      <div class="field"><label>Drone profile</label><select id="profileSel">
+        <option value="trainer">Trainer quad (5 m/s)</option><option value="sport">Sport quad (12 m/s)</option><option value="agri">Agri sprayer — heavy, slow to respond</option>
+        <% if (profiles.length) { %><optgroup label="Fly like my drone (from my flights)"><% profiles.forEach(p => { %><option value="log<%= p.id %>"><%= p.name %> — <%= p.maxV %> m/s</option><% }) %></optgroup><% } %>
+      </select></div>
+      <label class="row" style="font-weight:500"><input type="checkbox" id="windChk"> Gusty wind (drift you must correct)</label>
+      <label class="row" style="font-weight:500"><input type="checkbox" id="soundChk"> Motor sound</label>
+      <label class="row" style="font-weight:500"><input type="checkbox" id="traceChk"> Show my flight path</label>
+      <div class="field mt"><label>Voice coaching</label><div class="row"><select id="langSel" style="flex:1">
+        <% [['en-IN', 'English'], ['hi-IN', 'हिन्दी (Hindi)'], ['ta-IN', 'தமிழ் (Tamil)'], ['te-IN', 'తెలుగు (Telugu)'], ['kn-IN', 'ಕನ್ನಡ (Kannada)'], ['ml-IN', 'മലയാളം (Malayalam)'],
+          ['mr-IN', 'मराठी (Marathi)'], ['bn-IN', 'বাংলা (Bengali)'], ['gu-IN', 'ગુજરાતી (Gujarati)'], ['pa-IN', 'ਪੰਜਾਬੀ (Punjabi)'], ['or-IN', 'ଓଡ଼ିଆ (Odia)']].forEach(([v, l]) => { %><option value="<%= v %>"><%= l %></option><% }) %>
+      </select><label class="row" style="font-weight:500"><input type="checkbox" id="voiceChk"> on</label></div>
+      <p class="small muted" id="voiceNote"></p></div>
+      <details class="mt"><summary>Transmitter / gamepad mapping</summary>
+        <label class="row mt" style="font-weight:500"><input type="checkbox" id="gpEnable"> Use controller when connected</label>
+        <% ['thr', 'yaw', 'pitch', 'roll'].forEach(k => { %>
+          <div class="row mt"><span style="width:60px" class="small"><%= { thr: 'Throttle', yaw: 'Yaw', pitch: 'Pitch', roll: 'Roll' }[k] %></span>
+            <select id="ax_<%= k %>" style="width:auto"><% for (let i = 0; i < 8; i++) { %><option value="<%= i %>">axis <%= i %></option><% } %></select>
+            <label class="row small" style="font-weight:500"><input type="checkbox" id="inv_<%= k %>"> invert</label></div>
+        <% }) %>
+        <button class="btn sm mt" id="calBtn" type="button">Calibrate centre</button> <span class="small muted">with all sticks centred</span>
+        <p class="small muted mt" id="gpStatus"></p>
+      </details>
+    </div>
+    <div class="card">
+      <h2>Recent practice</h2>
+      <div class="tbl-wrap"><table><tr><th>Drill</th><th>Result</th><th>Time</th></tr>
+        <% runs.forEach(r => { %><tr><td class="small"><%= { hover: 'Hover & land', square: 'Square', eight: 'Figure-8', agri: 'Agri spray', gates: 'FPV gates', free: 'Free' }[r.exercise] || r.exercise %></td><td><span class="pill <%= r.passed ? 'pass' : 'fail' %>"><%= r.passed ? 'pass' : 'fail' %></span></td><td class="small"><%= r.seconds %> s</td></tr><% }) %>
+        <% if (!runs.length) { %><tr><td colspan="3" class="empty">No runs yet.</td></tr><% } %>
+      </table></div>
+    </div>
+  </div>
+</div>
+<script type="application/json" id="simCfg"><%- JSON.stringify({ testId: test ? test.id : null, profiles }).replace(/</g, '\\u003c') %></script>
+<script src="/static/sim.js?v=<%= v %>"></script>
+<%- include('partials/end') %>

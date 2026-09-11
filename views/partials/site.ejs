@@ -1,0 +1,19 @@
+<%- include('head', { title, extraHead: typeof extraHead !== 'undefined' ? extraHead : '', bodyClass: typeof bodyClass !== 'undefined' ? bodyClass : '' }) %>
+<header class="site-nav">
+  <a class="logo" href="/"><%= appName %><span>.</span></a>
+  <nav>
+    <a class="sec" href="/#replay">3D replay</a>
+    <a class="sec" href="/#rpto">For RPTOs</a>
+    <a class="sec" href="/#pilots">For pilots</a>
+    <a class="sec" href="/#simulator">Simulator</a>
+    <a class="sec" href="/#pricing">Pricing</a>
+    <a class="sec" href="/rptos">Find an RPTO</a>
+    <% if (user) { %>
+      <a class="btn pri" href="<%= user.role === 'super_admin' ? '/super' : user.role === 'member' ? '/rpto' : '/student' %>">Open portal</a>
+    <% } else { %>
+      <a href="/login">Log in</a>
+      <a class="btn pri" href="/register-rpto">Register your RPTO</a>
+    <% } %>
+  </nav>
+</header>
+<% if (flash) { %><div class="flash" style="margin:16px 6vw 0"><%= flash %></div><% } %>

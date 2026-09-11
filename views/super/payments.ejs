@@ -1,0 +1,26 @@
+<%- include('../partials/app', { title: 'Payments' }) %>
+<div class="page-head"><div><h1>Payments</h1><div class="muted">Pilot Pro subscriptions and RPTO completion-credit purchases (Razorpay). Grant Pro from <a href="/super/users?role=student">All users</a>; grant credits on an RPTO's page.</div></div></div>
+<div class="grid g5 mb">
+  <div class="stat ok"><b><%= money(k.total) %></b><span>Collected</span></div>
+  <div class="stat"><b><%= money(k.credits) %></b><span>from completion credits</span></div>
+  <div class="stat"><b><%= k.n %></b><span>Paid orders</span></div>
+  <div class="stat info"><b><%= pro %></b><span>Active Pro pilots</span></div>
+  <div class="stat warn"><b><%= money(earnings.reduce((t, e) => t + +e.paise, 0) / 100) %></b><span>Partner earnings due</span></div>
+</div>
+<% if (earnings.length) { %>
+<div class="card mb">
+  <h2>Partner earnings to pay out</h2>
+  <div class="tbl-wrap"><table><tr><th>RPTO</th><th>Items</th><th>Amount due</th><th></th></tr>
+    <% earnings.forEach(e => { %><tr><td><a href="/super/rptos/<%= e.id %>"><%= e.name %></a></td><td><%= e.items %></td><td><b><%= money(e.paise / 100) %></b></td>
+      <td class="right"><form method="post" action="/super/rptos/<%= e.id %>/earnings-paid" data-confirm="Mark <%= money(e.paise / 100) %> as paid to <%= e.name %>? Pay them first (bank transfer/UPI)."><button class="btn sm ok">Mark paid</button></form></td></tr><% }) %>
+  </table></div>
+</div>
+<% } %>
+<div class="tbl-wrap"><table>
+  <tr><th>Date</th><th>Paid by</th><th>For</th><th>Amount</th><th>Status</th><th>Order ID</th><th>Payment ID</th></tr>
+  <% payments.forEach(p => { %><tr><td><%= fmtDate(p.paid_at || p.created_at) %></td><td><%= p.name %><div class="small muted"><%= p.email %></div></td>
+    <td><%= p.plan === 'credits' ? `${p.quantity} credits · ${p.rpto || ''}` : p.plan %></td><td><%= money(p.amount_paise / 100) %></td>
+    <td><span class="pill <%= p.status === 'paid' ? 'ok' : p.status === 'failed' ? 'bad' : '' %>"><%= p.status %></span></td><td class="small"><%= p.order_id %></td><td class="small"><%= p.payment_id || '—' %></td></tr><% }) %>
+  <% if (!payments.length) { %><tr><td colspan="7" class="empty">No payments yet.</td></tr><% } %>
+</table></div>
+<%- include('../partials/end') %>

@@ -1,0 +1,17 @@
+<%- include('../partials/app', { title: 'RPTOs' }) %>
+<div class="page-head"><div><h1>RPTOs</h1><div class="muted">Approve, suspend and set staff limits.</div></div><a class="btn pri" href="/super/rptos/new">+ Add RPTO</a></div>
+<form class="row mb">
+  <input name="s" value="<%= s %>" placeholder="Search name or city" style="max-width:280px">
+  <select name="status" style="max-width:180px"><option value="">All statuses</option><% ['pending','approved','rejected','suspended'].forEach(x => { %><option <%= status === x ? 'selected' : '' %>><%= x %></option><% }) %></select>
+  <button class="btn">Filter</button>
+</form>
+<div class="tbl-wrap"><table>
+  <tr><th>RPTO</th><th>City</th><th>Authorisation</th><th>Status</th><th>Staff</th><th>Trainees</th><th>Batches</th><th>Registered</th><th></th></tr>
+  <% rptos.forEach(r => { %>
+    <tr><td><b><%= r.name %></b></td><td><%= r.city %></td><td><%= r.auth_no || '—' %></td><td><span class="pill <%= r.status %>"><%= r.status %></span></td>
+      <td><%= r.staff %> / <%= r.staff_limit %></td><td><%= r.trainees %></td><td><%= r.batches %></td><td><%= fmtDate(r.created_at) %></td>
+      <td class="right"><a class="btn sm" href="/super/rptos/<%= r.id %>">Open</a></td></tr>
+  <% }) %>
+  <% if (!rptos.length) { %><tr><td colspan="9" class="empty">No RPTOs found.</td></tr><% } %>
+</table></div>
+<%- include('../partials/end') %>

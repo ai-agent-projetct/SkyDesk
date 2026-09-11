@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Test pack — <%= t.title %></title>
+<style>
+body{font:13px/1.5 system-ui,"Segoe UI",sans-serif;color:#0f172a;max-width:860px;margin:20px auto;padding:0 20px}
+h1{font-size:20px;margin:0}ol li{margin-bottom:12px;break-inside:avoid}.opts{display:grid;grid-template-columns:1fr 1fr;gap:2px 20px;margin-top:4px}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #cbd5e1;padding:5px 8px;text-align:left}.page{break-before:page}
+@media print{.noprint{display:none}}
+</style></head><body>
+<div class="noprint"><button onclick="print()">Print</button> <span style="color:#64748b">A new random set of questions is drawn each time this page loads.</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><div><h1><%= rpto.name %></h1><div><%= t.batch_title %> — <%= t.title %></div></div>
+  <% if (rpto.logo) { %><img src="/files/<%= rpto.logo %>" alt="" style="max-height:56px"><% } %></div>
+<p>Name: ______________________ &nbsp; Roll no.: ____________ &nbsp; Date: ___________ &nbsp; Time allowed: <%= t.duration_min %> min &nbsp; Pass mark: <%= t.pass_percent %>%</p>
+<ol>
+  <% questions.forEach(q => { %><li><b><%= q.question %></b><div class="opts"><div>A. <%= q.a %></div><div>B. <%= q.b %></div><% if (q.c) { %><div>C. <%= q.c %></div><% } %><% if (q.d) { %><div>D. <%= q.d %></div><% } %></div></li><% }) %>
+</ol>
+<% if (!questions.length) { %><p>The question bank is empty — add questions under Settings → Question bank.</p><% } %>
+<div class="page"><h1>Answer key (examiner copy)</h1>
+  <table><tr><% questions.forEach((q, i) => { %><td><b><%= i + 1 %>.</b> <%= q.correct.toUpperCase() %></td><% if ((i + 1) % 10 === 0) { %></tr><tr><% } %><% }) %></tr></table>
+  <h1 style="margin-top:24px">Attendance</h1>
+  <table><tr><th>Roll no.</th><th>Trainee</th><th>Signature</th><th>Score</th></tr>
+    <% trainees.forEach(tr => { %><tr><td><%= tr.roll_no || '' %></td><td><%= tr.name %></td><td style="width:35%"></td><td style="width:15%"></td></tr><% }) %></table>
+</div>
+</body></html>

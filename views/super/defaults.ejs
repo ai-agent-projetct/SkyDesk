@@ -1,0 +1,9 @@
+<%- include('../partials/app', { title: 'Training defaults' }) %>
+<div class="page-head"><div><h1>Training defaults</h1><div class="muted">The syllabus and question bank every RPTO uses until it customises its own. <%= customSyl %> RPTO(s) have their own syllabus, <%= customQ %> their own question bank.</div></div></div>
+<div class="tabs">
+  <a href="?tab=syllabus" class="<%= tab === 'syllabus' ? 'on' : '' %>">Default syllabus (<%= syllabus.length %>)</a>
+  <a href="?tab=questions" class="<%= tab === 'questions' ? 'on' : '' %>">Default question bank (<%= questions.length %>)</a>
+</div>
+<% if (tab === 'syllabus') { %><%- include('../partials/syllabus-edit', { base: '/super/defaults', platform: true, custom: true }) %>
+<% } else { %><%- include('../partials/qbank', { base: '/super/defaults', platform: true, defaults: 0 }) %><% } %>
+<%- include('../partials/end') %>

@@ -1,0 +1,65 @@
+<%- include('../partials/app', { title: 'Billing' }) %>
+<% const due = earnings.filter(e => e.status === 'due').reduce((t, e) => t + e.amount_paise, 0), paid = earnings.filter(e => e.status === 'paid').reduce((t, e) => t + e.amount_paise, 0); %>
+<div class="page-head"><div><h1>Billing</h1><div class="muted">Completion credits and partner earnings for <%= user.rpto.name %>.</div></div></div>
+<div class="grid g5 mb">
+  <% if (price) { %><div class="stat <%= credits > 0 ? 'ok' : 'warn' %>"><b><%= credits %></b><span>Completion credits left</span></div><% } %>
+  <% if (share) { %><div class="stat warn"><b><%= money(due / 100) %></b><span>Partner earnings due</span></div><div class="stat ok"><b><%= money(paid / 100) %></b><span>Partner earnings paid</span></div><% } %>
+</div>
+<% if (!price && !share) { %><div class="card empty">Billing is not enabled on this platform — certificates are free to issue.</div><% } %>
+<% if (price) { %>
+<div class="grid g2 mb">
+  <div class="card">
+    <h2>Completion credits</h2>
+    <p class="muted small">Issuing a course certificate uses 1 credit (<%= money(price) %> each, inclusive of GST). Trainees with an active Pilot Pro plan are certified free — no credit used.</p>
+    <% if (keyId) { %>
+      <div class="row"><input type="number" id="qty" min="1" max="1000" value="10" style="width:110px"> <span class="muted">× <%= money(price) %> = <b id="total"><%= money(price * 10) %></b></span>
+        <button class="btn pri" id="buyBtn">Buy credits</button></div>
+    <% } else { %><p class="small muted">Online payment isn't enabled. Contact the platform admin to add credits.</p><% } %>
+  </div>
+  <div class="card">
+    <h2>Purchases</h2>
+    <div class="tbl-wrap"><table><tr><th>Date</th><th>Credits</th><th>Amount</th><th>Status</th><th>By</th></tr>
+      <% payments.forEach(p => { %><tr><td><%= fmtDate(p.paid_at || p.created_at) %></td><td><%= p.quantity %></td><td><%= money(p.amount_paise / 100) %></td><td><span class="pill <%= p.status === 'paid' ? 'ok' : p.status === 'failed' ? 'bad' : '' %>"><%= p.status %></span></td><td class="small"><%= p.name %></td></tr><% }) %>
+      <% if (!payments.length) { %><tr><td colspan="5" class="empty">No purchases yet.</td></tr><% } %>
+    </table></div>
+  </div>
+</div>
+<div class="card mb">
+  <h2>Credit history</h2>
+  <div class="tbl-wrap"><table><tr><th>Date</th><th>Change</th><th>Reason</th><th>Details</th><th>By</th></tr>
+    <% ledger.forEach(l => { %><tr><td><%= fmtDate(l.created_at) %></td><td><b style="color:<%= l.delta > 0 ? 'var(--ok)' : 'var(--bad)' %>"><%= l.delta > 0 ? '+' : '' %><%= l.delta %></b></td><td><span class="pill"><%= l.reason %></span></td>
+      <td class="small"><%= l.reason === 'certificate' ? `${l.trainee || ''} · ${l.cert_no || ''}` : l.note || '' %></td><td class="small"><%= l.by_name || 'Platform' %></td></tr><% }) %>
+    <% if (!ledger.length) { %><tr><td colspan="5" class="empty">No credit activity yet.</td></tr><% } %>
+  </table></div>
+</div>
+<% } %>
+<% if (share) { %>
+<div class="card">
+  <h2>Partner programme</h2>
+  <p class="muted small">You earn <%= share %>% of Pilot Pro payments made by pilots you certified, for <%= months %> months after their certificate. The platform pays these out periodically.</p>
+  <div class="tbl-wrap"><table><tr><th>Date</th><th>Pilot</th><th>Your share</th><th>Status</th></tr>
+    <% earnings.forEach(e => { %><tr><td><%= fmtDate(e.created_at) %></td><td><%= e.name %></td><td><%= money(e.amount_paise / 100) %></td><td><span class="pill <%= e.status === 'paid' ? 'ok' : 'warn' %>"><%= e.status %></span><%= e.paid_at ? ' ' + fmtDate(e.paid_at) : '' %></td></tr><% }) %>
+    <% if (!earnings.length) { %><tr><td colspan="4" class="empty">No partner earnings yet.</td></tr><% } %>
+  </table></div>
+</div>
+<% } %>
+<form id="verify" method="post" action="/rpto/billing/verify" hidden><input name="razorpay_order_id"><input name="razorpay_payment_id"><input name="razorpay_signature"></form>
+<% if (price && keyId) { %>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+const qty = document.getElementById('qty'), price = <%= price %>;
+qty.oninput = () => { document.getElementById('total').textContent = '₹' + (Math.max(1, +qty.value || 1) * price).toLocaleString('en-IN'); };
+document.getElementById('buyBtn').onclick = async e => {
+  e.target.disabled = true;
+  const r = await fetch('/rpto/billing/order', { method: 'POST', body: new URLSearchParams({ quantity: qty.value }) });
+  const o = await r.json(); e.target.disabled = false;
+  if (!r.ok) return alert(o.error || 'Could not start payment');
+  new Razorpay({ ...o, theme: { color: '#1d6fe8' }, handler: resp => {
+    const f = document.getElementById('verify');
+    for (const k of ['razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature']) f.elements[k].value = resp[k];
+    f.submit();
+  } }).open();
+};
+</script>
+<% } %>
+<%- include('../partials/end') %>

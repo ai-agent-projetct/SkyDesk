@@ -1,0 +1,33 @@
+<%- include('../partials/site', { title: 'Register your RPTO' }) %>
+<div class="auth wide">
+  <div class="card">
+    <h1>Register your RPTO</h1>
+    <p class="muted">Submit your organisation details and documents. The platform team reviews them; once approved, your portal is activated and you can add staff and trainees.</p>
+    <% if (error) { %><div class="alert bad"><%= error %></div><% } %>
+    <form method="post" enctype="multipart/form-data">
+      <h3 class="mt">Organisation</h3>
+      <div class="fields">
+        <div class="field"><label>RPTO name (as on DGCA authorisation) *</label><input name="name" value="<%= b.name || '' %>" required></div>
+        <div class="field"><label>City *</label><input name="city" value="<%= b.city || '' %>" required></div>
+        <div class="field"><label>RPTO authorisation no.</label><input name="auth_no" value="<%= b.auth_no || '' %>"></div>
+        <div class="field"><label>DGCA file no.</label><input name="file_no" value="<%= b.file_no || '' %>"></div>
+      </div>
+      <div class="field"><label>Address</label><textarea name="address" rows="2"><%= b.address || '' %></textarea></div>
+      <h3 class="mt">Accountable Manager (your login)</h3>
+      <div class="fields">
+        <div class="field"><label>Full name *</label><input name="am_name" value="<%= b.am_name || '' %>" required></div>
+        <div class="field"><label>Mobile</label><input name="phone" value="<%= b.phone || '' %>"></div>
+        <div class="field"><label>Email *</label><input name="email" type="email" value="<%= b.email || '' %>" required></div>
+        <div class="field"><label>Password * (min 8)</label><input name="password" type="password" minlength="8" required autocomplete="new-password"></div>
+      </div>
+      <h3 class="mt">Documents (PDF / JPG / PNG, max 5 MB)</h3>
+      <div class="fields">
+        <% Object.entries(L.RPTO_DOCS).forEach(([k, label]) => { %>
+          <div class="field"><label><%= label %><%= L.RPTO_DOCS_REQUIRED.includes(k) ? ' *' : '' %></label><input type="file" name="<%= k %>" accept=".pdf,.jpg,.jpeg,.png,.webp" <%= L.RPTO_DOCS_REQUIRED.includes(k) ? 'required' : '' %>></div>
+        <% }) %>
+      </div>
+      <button class="btn pri">Submit for approval</button>
+    </form>
+  </div>
+</div>
+<%- include('../partials/site-end') %>

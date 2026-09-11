@@ -1,0 +1,87 @@
+<%- include('../partials/app', { title: 'My training' }) %>
+<% const docCount = Object.values(docs).filter(s => s === 'verified').length, docTotal = Object.keys(L.TRAINEE_DOCS).length; %>
+<div class="page-head"><div><h1>Hi, <%= user.name.split(' ')[0] %> 👋</h1><div class="muted">Your pilot training at a glance.</div></div>
+  <% if (!active) { %><a class="btn pri" href="/student/apply">Apply to a batch</a><% } %></div>
+
+<% if (docCount < docTotal) { %><div class="alert warn">Documents: <%= docCount %>/<%= docTotal %> verified. <a href="/student/documents">Upload or fix your documents</a> — you can only be admitted once all are verified.</div><% } %>
+<% if (user.license_expiry) { const soon = new Date(Date.now() + 60 * 864e5).toISOString().slice(0, 10); %>
+  <% if (user.license_expiry < today) { %><div class="alert bad">Your remote pilot licence (<%= user.license_no || 'no number' %>) expired on <%= fmtDate(user.license_expiry) %>. Renew it before flying.</div>
+  <% } else if (user.license_expiry <= soon) { %><div class="alert warn">Your remote pilot licence expires on <%= fmtDate(user.license_expiry) %>. Start the renewal now.</div><% } %>
+<% } %>
+
+<div class="card mb">
+  <div class="row between"><h2 style="margin:0">My pilot career</h2><div class="row"><a class="btn sm" href="/pilot">Pilot hub</a><a class="btn sm" href="/pilot/logbook">Pilot logbook</a><a class="btn sm" href="/flights">Upload a flight</a></div></div>
+  <div class="grid g5 mt">
+    <div class="stat info"><b><%= mins(career.minutes) %></b><span>Total flight time</span></div>
+    <div class="stat"><b><%= career.flights %></b><span><%= career.training %> training · <%= career.personal %> personal</span></div>
+    <div class="stat <%= career.current ? 'ok' : 'warn' %>"><b><%= career.current ? 'Current' : 'Not current' %></b><span><%= career.recent %> flight(s) in <%= career.days %> days</span></div>
+    <div class="stat"><b><%= career.last ? fmtDate(career.last) : '—' %></b><span>Last flight</span></div>
+  </div>
+  <% const maxM = Math.max(1, ...career.months.map(m => m.minutes)); %>
+  <div class="row mt" style="align-items:flex-end;gap:6px;height:70px">
+    <% career.months.forEach(m => { %><div style="flex:1;text-align:center" title="<%= m.ym %>: <%= mins(m.minutes) %>"><div style="height:<%= Math.max(2, m.minutes / maxM * 48) %>px;background:var(--pri);border-radius:4px 4px 0 0;opacity:<%= m.minutes ? 1 : .25 %>"></div><div class="small muted"><%= m.ym.slice(5) %></div></div><% }) %>
+  </div>
+</div>
+
+<% if (active) { %>
+<div class="grid g5">
+  <div class="stat info"><b><%= active.batch_title %></b><span><%= active.rpto_name %> · <%= active.delivery === 'hybrid' ? 'Hybrid' : 'On-site' %></span></div>
+  <div class="stat"><b><%= active.roll_no || '—' %></b><span>Roll number</span></div>
+  <div class="stat cyan"><b><%= progress ? progress.attended + '/' + progress.total : '—' %></b><span>Sessions attended</span></div>
+  <div class="stat vio"><b><%= progress ? progress.stage : '—' %></b><span>Stage</span></div>
+  <% if (active.cert_no) { %><a class="stat ok" target="_blank" href="/student/certificate/<%= active.id %>"><b>Certificate</b><span><%= active.cert_no %> — view / print</span></a><% } %>
+  <% if (active.rpc_no) { %><div class="stat ok"><b><%= active.rpc_no %></b><span>RPC number</span></div><% } %>
+</div>
+
+<div class="grid g2 mt">
+  <div class="card">
+    <div class="row between"><h2 style="margin:0">Tests</h2><a class="small" target="_blank" href="/student/record/<%= active.id %>">My training record</a></div>
+    <div class="tbl-wrap mt"><table><tr><th>Test</th><th>Result</th><th></th></tr>
+      <% tests.forEach(t => { const done = t.passed !== null && t.passed !== undefined; %><tr><td><%= t.title %> <span class="pill"><%= t.type %></span></td>
+        <td><% if (done) { %><span class="pill <%= t.passed ? 'pass' : 'fail' %>"><%= t.passed ? 'Pass' : 'Fail' %></span> <%= t.score !== null ? t.score + '/' + t.total : '' %><% } else { %><span class="muted">Pending</span><% } %></td>
+        <td class="right"><% if (t.type === 'theory' && !done && t.open) { %><a class="btn sm pri" href="/student/tests/<%= t.id %>">Take test</a><% } else if (t.type === 'theory' && done) { %><a class="btn sm" href="/student/tests/<%= t.id %>">View</a>
+          <% } else if (t.type === 'simulator' && !done && t.open) { %><a class="btn sm pri" href="/simulator">Take simulator test</a><% } %></td></tr><% }) %>
+      <% if (!tests.length) { %><tr><td colspan="3" class="empty">No tests scheduled yet.</td></tr><% } %>
+    </table></div>
+  </div>
+  <div class="card">
+    <div class="row between"><h2 style="margin:0">Training flights (<%= flights.length %> · <%= mins(flights.reduce((t, f) => t + f.minutes, 0)) %>)</h2><a class="small" href="/flights">My flights & 3D replay</a></div>
+    <div class="tbl-wrap mt"><table><tr><th>Date</th><th>Activity</th><th>RPAS</th><th>Time</th></tr>
+      <% flights.slice(0, 10).forEach(f => { %><tr><td><%= f.date %></td><td class="small"><%= f.activity %><% if (f.track_id) { %> <a href="/flights/<%= f.track_id %>">3D</a><% } %></td><td><%= f.rpas || '—' %></td><td><%= mins(f.minutes) %></td></tr><% }) %>
+      <% if (!flights.length) { %><tr><td colspan="4" class="empty">Your flights will appear here.</td></tr><% } %>
+    </table></div>
+  </div>
+</div>
+
+<div class="card mt">
+  <h2>My schedule</h2>
+  <div class="tbl-wrap"><table><tr><th>Date</th><th>Time</th><th>Type</th><th>Session</th><th>Instructor</th><th>Attendance</th></tr>
+    <% schedule.forEach(s => { %><tr style="<%= s.date === today ? 'background:#eff6ff' : '' %>"><td class="nowrap"><%= s.date %></td><td class="small nowrap"><%= String(s.start_time || '').slice(0, 5) %>–<%= String(s.end_time || '').slice(0, 5) %></td>
+      <td><span class="pill <%= s.type %>"><%= s.type %></span></td><td><%= s.title %><% if (s.notes) { %> <span class="small muted">· <%= s.notes %></span><% } %></td><td><%= s.instructor || '—' %></td>
+      <td><%= s.present === null ? (s.date < today ? '—' : 'Upcoming') : s.present ? '✓ Present' : '✗ Absent' %></td></tr><% }) %>
+    <% if (!schedule.length) { %><tr><td colspan="6" class="empty">Your RPTO hasn't published the timetable yet.</td></tr><% } %>
+  </table></div>
+</div>
+<% } %>
+
+<div class="grid g2 mt">
+  <div class="card">
+    <h2>My applications</h2>
+    <div class="tbl-wrap"><table><tr><th>RPTO / batch</th><th>Status</th><th>Applied</th><th></th></tr>
+      <% apps.forEach(a => { %><tr><td><b><%= a.rpto_name %></b><div class="small muted"><%= a.batch_title || 'Batch to be assigned' %></div></td>
+        <td><span class="pill <%= a.status %>"><%= a.status %></span><% if (a.reason) { %><div class="small muted"><%= a.reason %></div><% } %></td><td><%= fmtDate(a.applied_at) %></td>
+        <td class="right"><% if (a.status === 'pending') { %><form method="post" action="/student/applications/<%= a.id %>/withdraw" data-confirm="Withdraw this application?"><button class="btn sm bad">Withdraw</button></form><% } %>
+          <% if (a.cert_no && a !== active) { %><a class="btn sm" target="_blank" href="/student/certificate/<%= a.id %>">Certificate</a><% } %></td></tr><% }) %>
+      <% if (!apps.length) { %><tr><td colspan="4" class="empty">You haven't applied yet. <a href="/student/apply">Find an open batch</a>.</td></tr><% } %>
+    </table></div>
+  </div>
+  <div class="card">
+    <h2>Fees</h2>
+    <div class="tbl-wrap"><table><tr><th>RPTO</th><th>Description</th><th>Amount</th><th>Balance</th><th>Due</th><th>Receipts</th></tr>
+      <% fees.forEach(f => { %><tr><td><%= f.rpto %></td><td><%= f.description %><%= +f.gst_percent ? ` (incl. ${+f.gst_percent}% GST)` : '' %></td><td><%= money(f.amount) %></td><td><span class="pill <%= f.amount - f.paid <= 0 ? 'ok' : 'warn' %>"><%= f.amount - f.paid <= 0 ? 'Paid' : money(f.amount - f.paid) %></span></td><td><%= fmtDate(f.due_date) %></td>
+        <td class="small"><% f.receipts.forEach(p => { %><a target="_blank" href="/student/receipts/<%= p.id %>"><%= p.receipt_no %></a> <%= money(p.amount) %><br><% }) %></td></tr><% }) %>
+      <% if (!fees.length) { %><tr><td colspan="6" class="empty">No fees.</td></tr><% } %>
+    </table></div>
+  </div>
+</div>
+<%- include('../partials/end') %>

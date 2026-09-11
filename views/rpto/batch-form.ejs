@@ -1,0 +1,47 @@
+<%- include('../partials/app', { title: b.id ? 'Edit batch' : 'New batch' }) %>
+<% const has = key => sel.includes(key); const groups = { rpas: 'RPAS', battery: 'Batteries', charger: 'Chargers', simulator: 'Simulators', classroom: 'Classroom', field: 'Flying field' }; %>
+<div class="page-head"><div><a class="small" href="/rpto/batches<%= b.id ? '/' + b.id : '' %>">← Back</a><h1><%= b.id ? 'Edit ' + b.title : 'New batch' %></h1></div></div>
+<% if (!min.ok) { %><div class="alert warn">Some training-resource minimums are not met yet — you can still create the batch.</div><% } %>
+<form method="post" action="<%= b.id ? '/rpto/batches/' + b.id + '/edit' : '/rpto/batches' %>" style="max-width:920px">
+  <div class="card">
+    <h2>1 · Course</h2>
+    <div class="fields">
+      <div class="field"><label>Title *</label><input name="title" value="<%= b.title || '' %>" placeholder="e.g. Small Rotorcraft — Batch 04" required></div>
+      <div class="field"><label>Certificate</label><select name="certificate"><% ['Cat-1 [VLOS]', 'Cat-2 [BVLOS]'].forEach(x => { %><option <%= b.certificate === x ? 'selected' : '' %>><%= x %></option><% }) %></select></div>
+      <div class="field"><label>RPAS category</label><select name="rpas_category"><% ['Rotorcraft', 'Aeroplane', 'Hybrid', 'Combination'].forEach(x => { %><option <%= b.rpas_category === x ? 'selected' : '' %>><%= x %></option><% }) %></select></div>
+      <div class="field"><label>RPAS class (shown on certificate)</label><select name="rpas_class"><% ['Small', 'Medium', 'Micro', 'Nano'].forEach(x => { %><option <%= b.rpas_class === x ? 'selected' : '' %>><%= x %></option><% }) %></select></div>
+      <div class="field"><label>Batch number (used in roll numbers)</label><input name="batch_no" value="<%= b.batch_no || '' %>" placeholder="e.g. 04"></div>
+      <div class="field"><label>Delivery mode</label><select name="delivery">
+        <option value="onsite" <%= b.delivery === 'onsite' ? 'selected' : '' %>>Fully on-site (theory + practical at the RPTO)</option>
+        <option value="hybrid" <%= b.delivery === 'hybrid' ? 'selected' : '' %>>Hybrid (theory online + practical on-site)</option></select></div>
+    </div>
+  </div>
+  <div class="card mt">
+    <h2>2 · Schedule</h2>
+    <div class="fields">
+      <div class="field"><label>Start date</label><input type="date" name="start_date" value="<%= b.start_date || '' %>"></div>
+      <div class="field"><label>End date (auto-set by the scheduler)</label><input type="date" name="end_date" value="<%= b.end_date || '' %>"></div>
+    </div>
+  </div>
+  <div class="card mt">
+    <h2>3 · Resources & capacity</h2>
+    <div class="fields">
+      <div class="field"><label>Seats *</label><input type="number" name="seats" min="1" value="<%= b.seats || 10 %>" required></div>
+      <div class="field"><label>Course fee (₹, billed on admission)</label><input type="number" name="fee" min="0" step="0.01" value="<%= b.fee || 0 %>"></div>
+    </div>
+    <h3>Instructors</h3>
+    <div class="row mb">
+      <% instructors.forEach(i => { %><label class="row" style="font-weight:500" title="<%= i.certified ? '' : 'Upload a DGCA instructor certificate under Members to assign' %>"><input type="checkbox" name="instructors" value="<%= i.id %>" <%= has('instructor' + i.id) ? 'checked' : '' %> <%= i.certified ? '' : 'disabled' %>> <%= i.name %><%= i.certified ? '' : ' (no certificate)' %></label><% }) %>
+      <% if (!instructors.length) { %><span class="muted small">No instructors yet — add them under Members.</span><% } %>
+    </div>
+    <% Object.entries(groups).forEach(([type, label]) => { const list = assets.filter(a => a.type === type); %>
+      <h3><%= label %></h3>
+      <div class="row mb">
+        <% list.forEach(a => { %><label class="row" style="font-weight:500"><input type="checkbox" name="assets" value="<%= a.id %>" <%= has('asset' + a.id) ? 'checked' : '' %>> <%= a.name %><%= a.uin ? ' · ' + a.uin : a.serial_no ? ' · ' + a.serial_no : '' %></label><% }) %>
+        <% if (!list.length) { %><span class="muted small">None in service.</span><% } %>
+      </div>
+    <% }) %>
+  </div>
+  <button class="btn pri mt"><%= b.id ? 'Save batch' : 'Create batch' %></button>
+</form>
+<%- include('../partials/end') %>
