@@ -78,7 +78,7 @@ app.get('/files/:name', L.need(() => true), async (req, res) => {
 
 // Installable app (PWA): manifest, service worker at root scope, offline fallback page.
 app.get('/manifest.webmanifest', (req, res) => res.type('application/manifest+json').json({
-  name: res.locals.appName, short_name: res.locals.appName, start_url: '/login', display: 'standalone', background_color: '#0b1324', theme_color: '#1d6fe8',
+  name: res.locals.appName, short_name: res.locals.appName, start_url: '/login', display: 'standalone', background_color: '#062a30', theme_color: '#0d9488',
   icons: [192, 512].map(s => ({ src: `/static/icon-${s}.png`, sizes: `${s}x${s}`, type: 'image/png', purpose: 'any maskable' })),
 }));
 app.get('/sw.js', (req, res) => res.type('application/javascript').sendFile(path.join(__dirname, '..', 'public', 'sw.js')));

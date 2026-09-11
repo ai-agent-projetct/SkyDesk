@@ -9,6 +9,7 @@ self.addEventListener('activate', e => e.waitUntil(caches.keys().then(ks => Prom
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin) return;
+  if (u.pathname.startsWith('/static/media/')) return; // video uses Range requests; let the browser stream it
   if (u.pathname.startsWith('/static/')) {
     e.respondWith(caches.open(CACHE).then(async c => {
       const hit = await c.match(e.request);

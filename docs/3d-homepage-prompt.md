@@ -42,6 +42,11 @@ applied to SkyDesk's own product, copy and brand. Do not reuse the reference sit
 >    receipts, assets & logbooks with incidents, members & roles. Drone: small, perched on the corner of the grid.
 > 4. **Pilot hub** — a dashboard-style mock card (flight hours, sorties, currency, a monthly bar chart) plus logbooks (pilot,
 >    per-drone, battery, maintenance), fleet tracking and the read-only live monitor. Drone: hovers above the chart.
+> 4b. **Automated compliance** (navy sky) — eyebrow "Automated compliance", a headline about four logbooks that fill
+>    themselves, and a two-state switch **By hand / Automated**. Below it, four cards (pilot logbook, flight logbook per drone,
+>    battery logbook, maintenance log), each with three form rows. "Automated" shows the rows filled with sample values and a
+>    green "filled from the flight log" note; "By hand" empties the values into blank underlined fields with an amber
+>    "typed after every flight" note, and a summary line contrasts 0 fields typed with 12. Drone: hovers beside the switch.
 > 5. **Simulator** (navy sky) — Stabilize/AltHold/Loiter, arming, return-home, battery failsafe, drills (hover, square,
 >    figure-8, agri spray, FPV gates), watch-then-fly demos and voice coaching in 11 Indian languages. Drone: weaves between cards.
 > 6. **Pricing** — Free pilot account, RPTO plan, Pilot Pro. Drone: floats beside the highlighted plan.

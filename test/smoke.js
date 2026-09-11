@@ -180,7 +180,15 @@ assert.throws(() => parse(Buffer.from('a,b\n1,2\n3,4\n5,6')), /latitude/);
   // 3D homepage: canvas + drone markers present, three.js served locally (no CDN), scene script and styles reachable.
   const homeHtml = await get('', '/');
   assert.match(homeHtml, /id="scene3d"/); assert.match(homeHtml, /data-replay/); assert.match(homeHtml, /data-drone-at="[\d.]+,[-\d]+,[\d.]+,land"/);
-  for (const u of ['/vendor/three/three.module.js', '/vendor/three/three.core.js', '/static/home3d.js', '/static/home.css']) await get('', u);
+  assert.match(homeHtml, /id="logbooks"[\s\S]*data-lb="manual"[\s\S]*data-lb="auto"/); // automated-compliance switch
+  assert.equal((homeHtml.match(/class="card3 lb"/g) || []).length, 4, 'four logbook cards');
+  assert.match(homeHtml, /id="pilots"[\s\S]*class="dash-kpis"[\s\S]*Upcoming flights/); // pilot dashboard
+  assert.match(homeHtml, /Student portal[\s\S]*href="\/login\?next=\/student"/); // student log-in card
+  const toStudent = await fetch(base + '/login?next=/student', { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ email: 'student1@demo.test', password: 'Demo@1234' }) });
+  assert.equal(toStudent.headers.get('location'), '/student', 'student log-in lands in the student portal');
+  for (const u of ['/vendor/three/three.module.js', '/vendor/three/three.core.js', '/static/home3d.js', '/static/drone3d.js', '/static/home.css', '/demo/field', '/static/field3d.js', '/static/media/sim-demo.jpg']) await get('', u);
+  assert.match(homeHtml, /class="sim-demo"[\s\S]*src="\/static\/media\/sim-demo\.mp4"/); // simulator demo video
+  assert.equal((await fetch(base + '/static/media/sim-demo.mp4', { headers: { range: 'bytes=0-1' } })).status, 206, 'video streams with Range requests');
   assert.equal((await post('', '/forgot', { email: 'nobody@example.com' })).status, 200);
   const rid = (await L.one("SELECT id FROM rptos WHERE name='Demo Drone Academy'")).id;
   await get('', '/enquire/' + rid);

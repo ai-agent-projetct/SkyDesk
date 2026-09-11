@@ -16,6 +16,8 @@ Node.js (Express 5, EJS) + MySQL. Installable as an app (PWA).
 3. `npm start` → http://localhost:3000
 4. `npm test` runs the smoke test. It changes data (takes tests, resets passwords), so run it on a **fresh** demo database.
 5. Going live on a real server (domain, HTTPS, backups, checklist): see [DEPLOY.md](DEPLOY.md).
+6. The homepage simulator video (`public/media/sim-demo.mp4` + `.jpg` poster) is recorded from the live 3D scene at `/demo/field`.
+   To re-record, open `/demo/field?record=1&bps=3000000` in Chrome — it downloads one seamless 31 s loop; replace the file in `public/media/`.
 
 ## Roles & workflow
 

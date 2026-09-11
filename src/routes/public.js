@@ -318,6 +318,9 @@ r.post('/reset/:token', async (req, res) => {
   res.redirect(home(u));
 });
 
+// Public demo loop of the practice simulator (also the source of the homepage video: /demo/field?record=1).
+r.get('/demo/field', (req, res) => res.render('public/field-demo'));
+
 // ---- Practice simulator (any signed-in user; students also get their batch's simulator test) ----
 const DRILLS = ['hover', 'square', 'eight', 'agri', 'gates', 'free'];
 const openSimTest = uid => L.one(`SELECT t.* FROM tests t JOIN applications a ON a.batch_id=t.batch_id AND a.user_id=? AND a.status='accepted'

@@ -81,7 +81,7 @@
     if (cam.mode === 'chase') { target = { x: cur.x, y: cur.y, z: cur.z }; cam.yaw = h; }
     if (cam.mode === 'follow') { target = { x: cur.x, y: cur.y, z: cur.z }; cam.yaw = angleTo(cam.yaw, h, playing ? 0.08 : 1); }
     if (cam.mode === 'fpv') { const d = 30; target = { x: cur.x + Math.sin(h) * d, y: cur.y + Math.cos(h) * d, z: cur.z }; cam.yaw = h; cam.dist = d; cam.pitch = 0.04; }
-    ctx.fillStyle = '#0b1324'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = '#062a30'; ctx.fillRect(0, 0, cv.width, cv.height);
     // ground grid
     const step = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].find(s => size / s <= 12) || 1000, pad = size * 0.4;
     const gx0 = Math.floor((x0 - pad) / step) * step, gx1 = Math.ceil((x1 + pad) / step) * step;
@@ -132,7 +132,7 @@
   function drawProfile() {
     const w = pf.width, hgt = pf.height, dpr = dprOf(), band = 10 * dpr, span = (z1 - ground) || 1, X = t => t / (T_END || 1) * w;
     pctx.clearRect(0, 0, w, hgt);
-    pctx.fillStyle = 'rgba(29,111,232,.12)'; pctx.strokeStyle = '#1d6fe8'; pctx.lineWidth = 1.5 * dpr; pctx.beginPath();
+    pctx.fillStyle = 'rgba(13,148,136,.12)'; pctx.strokeStyle = '#0d9488'; pctx.lineWidth = 1.5 * dpr; pctx.beginPath();
     P.forEach((p, i) => { const Y = hgt - band - 4 * dpr - (p.z - ground) / span * (hgt - band - 10 * dpr); i ? pctx.lineTo(X(p.t), Y) : pctx.moveTo(X(p.t), Y); });
     pctx.stroke(); pctx.lineTo(w, hgt - band); pctx.lineTo(0, hgt - band); pctx.fill();
     (events.modes || []).forEach((m, k, a) => { pctx.fillStyle = modeColor(m[1]); pctx.fillRect(X(m[0]), hgt - band, X(a[k + 1]?.[0] ?? T_END) - X(m[0]), band); });
@@ -165,7 +165,7 @@
       g.strokeStyle = '#cbd5e1'; g.lineWidth = 1.5; g.strokeRect(cx - r, H / 2 - r, 2 * r, 2 * r);
       g.beginPath(); g.moveTo(cx - r, H / 2); g.lineTo(cx + r, H / 2); g.moveTo(cx, H / 2 - r); g.lineTo(cx, H / 2 + r); g.strokeStyle = '#e2e8f0'; g.stroke();
       if (sx == null && sy == null) return;
-      g.fillStyle = '#1d6fe8'; g.beginPath(); g.arc(cx + (sx || 0) * r, H / 2 + (sy || 0) * r, 7, 0, 7); g.fill();
+      g.fillStyle = '#0d9488'; g.beginPath(); g.arc(cx + (sx || 0) * r, H / 2 + (sy || 0) * r, 7, 0, 7); g.fill();
     });
     if (c.thr == null && c.rol == null) { g.fillStyle = '#94a3b8'; g.font = '11px system-ui'; g.textAlign = 'center'; g.fillText('no RC data in this log', W / 2, H - 2); }
   }
@@ -188,7 +188,7 @@
     ['Vibration', () => ({ unit: 'm/s²', names: ['X', 'Y', 'Z'], rows: series.vibe || [] })],
     ['RC input', () => ({ unit: 'PWM', names: ['Ch1 roll', 'Ch2 pitch', 'Ch3 throttle', 'Ch4 yaw'], rows: series.rc || [] })],
   ].map(([name, fn]) => ({ name, data: fn() })).filter(p => p.data.rows.some(r => r.slice(1).some(Number.isFinite)));
-  const LINE_COL = ['#1d6fe8', '#f59e0b', '#16a34a', '#db2777'];
+  const LINE_COL = ['#0d9488', '#f59e0b', '#16a34a', '#db2777'];
   let preset = PRESETS[0];
   $('presets').innerHTML = PRESETS.map((p, i) => `<button class="btn sm ${i ? '' : 'pri'}" data-preset="${i}">${p.name}</button>`).join('');
   $('presets').onclick = e => { const b = e.target.closest('[data-preset]'); if (!b) return; preset = PRESETS[+b.dataset.preset]; document.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('pri', x === b)); drawGraph(); };

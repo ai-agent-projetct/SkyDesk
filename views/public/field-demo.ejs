@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Practice simulator demo · <%= appName %></title>
+<link rel="icon" href="/static/icon-192.png">
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#04262b;font:14px system-ui,"Segoe UI",sans-serif;color:#cbd5e1}
+main{width:min(100%,1280px)}
+#out{display:block;width:100%;aspect-ratio:16/9;background:#062a30}
+p{margin:12px;text-align:center}a{color:#5eead4}
+</style>
+<script type="importmap">{"imports":{"three":"/vendor/three/three.module.js","drone3d":"/static/drone3d.js?v=<%= v %>"}}</script>
+</head>
+<body>
+<main>
+  <canvas id="out" role="img" aria-label="Practice simulator demo: a drone arms on the helipad, takes off, flies a figure-8 through the course and lands, with altitude, speed, mode, voice coaching and transmitter sticks on screen"></canvas>
+  <p>SkyDesk practice simulator — demo loop. <a href="/simulator">Fly it yourself</a> · <a href="/">Home</a></p>
+</main>
+<script type="module" src="/static/field3d.js?v=<%= v %>"></script>
+</body>
+</html>

@@ -56,7 +56,7 @@
 <div class="card mt">
   <h2>My schedule</h2>
   <div class="tbl-wrap"><table><tr><th>Date</th><th>Time</th><th>Type</th><th>Session</th><th>Instructor</th><th>Attendance</th></tr>
-    <% schedule.forEach(s => { %><tr style="<%= s.date === today ? 'background:#eff6ff' : '' %>"><td class="nowrap"><%= s.date %></td><td class="small nowrap"><%= String(s.start_time || '').slice(0, 5) %>–<%= String(s.end_time || '').slice(0, 5) %></td>
+    <% schedule.forEach(s => { %><tr style="<%= s.date === today ? 'background:#ecfeff' : '' %>"><td class="nowrap"><%= s.date %></td><td class="small nowrap"><%= String(s.start_time || '').slice(0, 5) %>–<%= String(s.end_time || '').slice(0, 5) %></td>
       <td><span class="pill <%= s.type %>"><%= s.type %></span></td><td><%= s.title %><% if (s.notes) { %> <span class="small muted">· <%= s.notes %></span><% } %></td><td><%= s.instructor || '—' %></td>
       <td><%= s.present === null ? (s.date < today ? '—' : 'Upcoming') : s.present ? '✓ Present' : '✗ Absent' %></td></tr><% }) %>
     <% if (!schedule.length) { %><tr><td colspan="6" class="empty">Your RPTO hasn't published the timetable yet.</td></tr><% } %>

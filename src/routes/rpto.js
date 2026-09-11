@@ -1058,7 +1058,7 @@ r.post('/settings/branding', admin, L.upload.fields([{ name: 'logo' }, { name: '
   }
   const trainer = req.body.default_trainer_id && await L.one("SELECT user_id FROM members WHERE user_id=? AND rpto_id=? AND role='Instructor' LIMIT 1", [req.body.default_trainer_id, rid(req)]);
   await L.q('UPDATE rptos SET tagline=?, brand_color=?, default_trainer_id=? WHERE id=?',
-    [req.body.tagline || null, /^#[0-9a-f]{6}$/i.test(req.body.brand_color) ? req.body.brand_color : '#1d6fe8', trainer?.user_id || null, rid(req)]);
+    [req.body.tagline || null, /^#[0-9a-f]{6}$/i.test(req.body.brand_color) ? req.body.brand_color : '#0d9488', trainer?.user_id || null, rid(req)]);
   res.flash('Branding saved.');
   res.redirect('/rpto/settings?tab=branding');
 });

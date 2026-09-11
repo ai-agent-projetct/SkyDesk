@@ -3,6 +3,7 @@
 // markers, interpolated by scroll. Inside the pinned #replay section it switches to world mode: the drone flies a path over
 // a procedural terrain while the camera steps through Follow / Chase / Top / Side / FPV. Spec: docs/3d-homepage-prompt.md.
 import * as THREE from 'three';
+import { buildDrone, spinProps } from 'drone3d';
 
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -18,44 +19,6 @@ let renderer = null;
 try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' }); } catch { /* no WebGL */ }
 if (!renderer) { canvas.remove(); root.classList.add('no-webgl'); } else start();
 
-// ---------- the drone (forward = +Z, up = +Y) ----------
-function buildDrone() {
-  const pose = new THREE.Group(), tilt = new THREE.Group(); pose.add(tilt);
-  const M = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.15, ...o });
-  const blue = M(0x1d6fe8, { roughness: 0.32, metalness: 0.25 }), dark = M(0x1e293b, { roughness: 0.55 }), grey = M(0xa3acb9, { metalness: 0.55, roughness: 0.35 });
-  const orange = M(0xf97316, { roughness: 0.4 }), black = M(0x0b1220, { roughness: 0.2, metalness: 0.7 });
-  const add = (geo, mat, x = 0, y = 0, z = 0, parent = tilt) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); parent.add(m); return m; };
-
-  const body = add(new THREE.CapsuleGeometry(0.19, 0.34, 8, 20), blue); body.rotation.x = Math.PI / 2; body.scale.set(1.15, 1, 0.72);
-  add(new THREE.SphereGeometry(0.15, 20, 14), dark, 0, 0.1, 0.1).scale.set(1, 0.55, 1.35);             // canopy
-  add(new THREE.BoxGeometry(0.16, 0.05, 0.22), grey, 0, 0.14, -0.08);                                   // GPS mast base
-  add(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 16), dark, 0, 0.19, -0.08);
-  const gimbal = add(new THREE.SphereGeometry(0.075, 16, 12), dark, 0, -0.14, 0.22);
-  add(new THREE.CylinderGeometry(0.04, 0.045, 0.05, 16), black, 0, 0, 0.07, gimbal).rotation.x = Math.PI / 2; // lens
-  const props = [];
-  [45, 135, 225, 315].forEach((a, i) => {
-    const r = a * DEG, ax = Math.sin(r), az = Math.cos(r), L = 0.62;
-    const arm = add(new THREE.CylinderGeometry(0.03, 0.038, L, 10), grey, ax * L / 2, 0.02, az * L / 2);
-    arm.rotation.z = Math.PI / 2; arm.rotation.y = -r + Math.PI / 2;
-    const mx = ax * L, mz = az * L;
-    add(new THREE.CylinderGeometry(0.055, 0.06, 0.08, 18), dark, mx, 0.06, mz);                        // motor bell
-    const hub = new THREE.Group(); hub.position.set(mx, 0.115, mz); tilt.add(hub);
-    for (const s of [0, Math.PI]) { const blade = add(new THREE.BoxGeometry(0.46, 0.008, 0.045), black, 0, 0, 0, hub); blade.rotation.y = s; blade.position.x = 0; }
-    const disc = add(new THREE.CircleGeometry(0.25, 32), new THREE.MeshBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0, depthWrite: false }), 0, 0.002, 0, hub);
-    disc.rotation.x = -Math.PI / 2;                                                                         // motion blur disc when spinning fast
-    const guard = add(new THREE.TorusGeometry(0.28, 0.012, 8, 40), grey, mx, 0.115, mz); guard.rotation.x = Math.PI / 2;
-    for (let k = 0; k < 4; k++) { const g = k * Math.PI / 2 + r; add(new THREE.BoxGeometry(0.035, 0.03, 0.06), orange, mx + Math.cos(g) * 0.28, 0.115, mz + Math.sin(g) * 0.28).rotation.y = -g; }
-    props.push({ hub, disc, dir: i % 2 ? 1 : -1 });
-  });
-  for (const x of [-0.16, 0.16]) {                                                                          // skids
-    add(new THREE.CylinderGeometry(0.014, 0.014, 0.5, 8), grey, x, -0.27, 0).rotation.x = Math.PI / 2;
-    for (const z of [-0.12, 0.12]) add(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 8), grey, x * 0.8, -0.19, z).rotation.z = x > 0 ? -0.35 : 0.35;
-  }
-  const led = (c, z) => add(new THREE.SphereGeometry(0.025, 10, 8), new THREE.MeshBasicMaterial({ color: c }), 0, 0.02, z);
-  led(0x22c55e, 0.33); led(0xef4444, -0.33);
-  return { pose, tilt, props };
-}
-
 // ---------- replay world: low-poly terrain + flight path ----------
 function hash(x, y) { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); }
 function vnoise(x, y) {
@@ -64,7 +27,7 @@ function vnoise(x, y) {
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
 function ground(x, z) { let h = 0, amp = 1, f = 0.022; for (let o = 0; o < 5; o++) { h += amp * vnoise(x * f + 11, z * f + 7); amp *= 0.5; f *= 2.03; } return (h - 0.95) * 16 - 4; }
-function buildWorld() {
+function buildWorld(trailColor) {
   const group = new THREE.Group(), S = 170, N = 150;
   const geo = new THREE.PlaneGeometry(S, S, N, N).toNonIndexed(); geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color();
@@ -83,7 +46,7 @@ function buildWorld() {
     .map(([x, z]) => new THREE.Vector3(x, Math.max(ground(x, z), -10) + 10, z));
   const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.35);
   const SEG = 500, RAD = 6, tube = new THREE.TubeGeometry(curve, SEG, 0.22, RAD, false);
-  const trail = new THREE.Mesh(tube, new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9 }));
+  const trail = new THREE.Mesh(tube, new THREE.MeshBasicMaterial({ color: trailColor, transparent: true, opacity: 0.9 }));
   group.add(trail);
   const ghost = new THREE.Mesh(new THREE.TubeGeometry(curve, 200, 0.06, 4, false), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 }));
   group.add(ghost); // planned route, faint
@@ -95,11 +58,13 @@ function start() {
   if (reduce) root.classList.add('reduce-motion');
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(30, 1, 0.05, 500);
-  scene.add(new THREE.HemisphereLight(0xe0efff, 0x44403c, 1.7));
+  // Theme colours come from the stylesheet (--brand / --trail in home.css), so a re-theme is a CSS-only change.
+  const css = getComputedStyle(document.body), themed = (v, d) => new THREE.Color(css.getPropertyValue(v).trim() || d);
+  scene.add(new THREE.HemisphereLight(0xe6fbf6, 0x44403c, 1.7));
   const sun = new THREE.DirectionalLight(0xffffff, 2.4); sun.position.set(5, 9, 7); scene.add(sun);
-  const fog = new THREE.Fog(0xdcecff, 45, 160);
-  const D = buildDrone(); scene.add(D.pose);
-  const W = buildWorld(); W.group.visible = false; scene.add(W.group);
+  const fog = new THREE.Fog(0xdaf3ee, 45, 160);
+  const D = buildDrone(themed('--brand', '#0d9488')); scene.add(D.pose);
+  const W = buildWorld(themed('--trail', '#2dd4bf')); W.group.visible = false; scene.add(W.group);
 
   const SCREEN_CAM = new THREE.Vector3(0, 2.2, 10), ORIGIN = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
   let keys = [], rep = { top: 0, h: 1 }, night = [], vw = 1, vh = 1;
@@ -149,7 +114,7 @@ function start() {
   const NAMES = ['Follow', 'Chase', 'Top', 'Side', 'FPV'];
 
   const cur = { pos: new THREE.Vector3(0, -0.4, 0), yaw: -0.4, scale: 1, roll: 0, pitch: 0 }, prevSx = { v: 0 };
-  let spin = 1, t0 = performance.now(), lastCap = -1;
+  let spin = 1, t0 = performance.now(), lastCap = -1, firstFrame = true;
   const hud = { spd: $('#hudSpd'), alt: $('#hudAlt'), vs: $('#hudVs'), thr: $('#hudThr'), bat: $('#hudBat'), hdg: $('#hudHdg'), time: $('#hudTime'), pos: $('#hudPos'), mode: $('#hudMode') };
 
   function update(dt, time) {
@@ -163,7 +128,8 @@ function start() {
     const sp = screenPose(s), target = toPlane(sp.sx, sp.sy + (sp.land ? 0.02 : 0));
     const narrowK = Math.min(1, camera.aspect * 1.05), sScale = sp.scale * narrowK;
     const bob = reduce || sp.land ? 0 : Math.sin(time * 1.7) * 0.05 * sScale;
-    const k = 1 - Math.exp(-dt * 7); // floaty follow
+    const k = firstFrame ? 1 : 1 - Math.exp(-dt * 7); // floaty follow; the first frame starts exactly on the marker
+    firstFrame = false;
     cur.pos.lerp(target.setY(target.y + bob), k); cur.scale = lerp(cur.scale, sScale, k);
     cur.yaw = lerpAngle(cur.yaw, sp.yaw + (reduce ? 0 : Math.sin(time * 0.45) * 0.12), k);
     const vx = (sp.sx - prevSx.v) / Math.max(dt, 1e-3); prevSx.v = sp.sx;
@@ -201,7 +167,7 @@ function start() {
     D.pose.position.copy(dronePos); D.pose.rotation.set(0, yaw, 0); D.pose.scale.setScalar(scale); D.tilt.rotation.set(pitch, 0, roll);
     D.pose.visible = !hideDrone;
     spin = lerp(spin, sp.land && w === 0 ? 0 : 1, 1 - Math.exp(-dt * 1.5));
-    for (const pr of D.props) { pr.hub.rotation.y += pr.dir * spin * 55 * dt; pr.disc.material.opacity = 0.25 * spin; }
+    spinProps(D, spin, dt);
     camera.position.copy(camPos); camera.up.copy(camUp); camera.lookAt(camLook);
   }
 
