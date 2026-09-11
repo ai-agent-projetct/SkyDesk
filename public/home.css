@@ -1,5 +1,5 @@
 /* Scroll-driven 3D homepage (see docs/3d-homepage-prompt.md). Layers: fixed sky (-2) < page content < drone canvas (3) < replay overlays (4) < nav (10). */
-.home3d{--brand:#0d5ef1;--brand-2:#152a97;--trail:#5b9dff;--acc:#2774ed}
+.home3d{--brand:#0d5ef1;--brand-2:#152a97;--trail:#5b9dff;--acc:#2774ed;--drone:#15171c;--wing:#0d5ef1}
 body.home3d{background:#f3f7ff;color:#0f172a;overflow-x:hidden}
 .home3d .site-nav{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(148,163,184,.25);transition:background .4s}
 .home3d.is-night .site-nav{background:rgba(255,255,255,.9)} /* nav stays white over the dark sections so the logo reads */
@@ -12,16 +12,17 @@ body.home3d{background:#f3f7ff;color:#0f172a;overflow-x:hidden}
   radial-gradient(900px 600px at 20% 0%,rgba(47,123,245,.28),transparent 60%),linear-gradient(180deg,#081640 0%,#0c1f55 55%,#16307a 100%)}
 #scene3d{position:fixed;inset:0;width:100vw;height:100vh;z-index:3;pointer-events:none}
 
-.home3d main{position:relative}
+.home3d main{position:relative;padding:0} /* full-bleed sections; the app's main padding doesn't apply here */
 .home3d h1,.home3d h2{letter-spacing:-.025em}
 .eyebrow{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-2)}
 .night .eyebrow{color:#8fb8ff}
 
 /* 1. hero */
-.h-hero{position:relative;min-height:calc(100vh - 64px);padding:9vh 6vw 4vh;text-align:center;overflow:hidden}
+.h-hero{position:relative;isolation:isolate;min-height:calc(100vh - 64px);padding:9vh 6vw 4vh;text-align:center;overflow:hidden;
+  background:linear-gradient(180deg,#6ea8ff 0%,#96c0ff 36%,#c4dbff 68%,#f0f5ff 100%)} /* bluer sky so the white clouds show; ends in the replay stage's top tint */
 .h-hero .badge{display:inline-block;padding:7px 14px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid #b9d3ff;color:#152a97;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
 .h-hero h1{font-size:clamp(34px,6vw,68px);line-height:1.04;margin:22px auto 16px;max-width:980px;color:#0b1a3f}
-.h-hero h1 em{font-style:normal;background:linear-gradient(90deg,#152a97,#0d5ef1 50%,#5b9dff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.h-hero h1 em{font-style:normal;background:linear-gradient(90deg,#152a97,#0b4fd0);-webkit-background-clip:text;background-clip:text;color:transparent}
 .h-hero .lead{font-size:clamp(16px,1.6vw,19px);color:#475569;max-width:680px;margin:0 auto}
 .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:26px}
 .btn.lg{padding:13px 22px;font-size:16px;border-radius:12px}
@@ -29,7 +30,7 @@ body.home3d{background:#f3f7ff;color:#0f172a;overflow-x:hidden}
 .drone-spot{height:clamp(200px,34vh,360px)}
 .stats{display:flex;gap:clamp(18px,5vw,60px);justify-content:center;flex-wrap:wrap}
 .stats b{display:block;font-size:28px;color:#0b1a3f}.stats span{font-size:13px;color:#64748b}
-.clouds i{position:absolute;display:block;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(255,255,255,0));filter:blur(4px);animation:drift 60s linear infinite}
+.clouds i{position:absolute;z-index:-1;display:block;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(255,255,255,0));filter:blur(4px);animation:drift 60s linear infinite}
 .clouds i:nth-child(1){width:420px;height:140px;top:14%;left:-10%}.clouds i:nth-child(2){width:320px;height:110px;top:36%;left:62%;animation-duration:80s}
 .clouds i:nth-child(3){width:520px;height:170px;top:62%;left:10%;animation-duration:95s}.clouds i:nth-child(4){width:260px;height:90px;top:8%;left:70%;animation-duration:70s}
 .clouds i:nth-child(5){width:360px;height:120px;top:78%;left:66%;animation-duration:110s}
@@ -43,7 +44,7 @@ body.home3d{background:#f3f7ff;color:#0f172a;overflow-x:hidden}
 /* The sticky stage is its own stacking context, so it sits above the canvas (text, captions, HUD) with a see-through
    background; its sky lives in the fixed .sky-replay layer below the canvas, faded in by home3d.js while the stage is pinned. */
 .stage{position:sticky;top:0;height:100vh;overflow:hidden;z-index:4;pointer-events:none}
-.stage::before{content:'';position:absolute;inset:0 0 auto 0;height:48vh;background:linear-gradient(180deg,rgba(243,247,255,.8),rgba(243,247,255,0))}
+.stage::before{content:'';position:absolute;inset:0 0 auto 0;height:48vh;background:linear-gradient(180deg,rgba(243,247,255,.8),rgba(243,247,255,0));opacity:var(--w,1)} /* fades in with the replay world, so it doesn't grey the drone on its way in */
 .stage.fpv::before{opacity:0}
 .sky-replay{opacity:0;background:linear-gradient(180deg,#a9c8ff 0%,#d6e5ff 50%,#e3edff 100%)}
 .stage-copy{position:absolute;z-index:4;left:6vw;top:calc(64px + 4vh);max-width:560px;color:#0b1a3f;text-shadow:0 1px 12px rgba(255,255,255,.7)}

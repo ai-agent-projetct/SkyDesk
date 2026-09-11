@@ -63,7 +63,7 @@ function start() {
   scene.add(new THREE.HemisphereLight(0xe8f0ff, 0x44403c, 1.7));
   const sun = new THREE.DirectionalLight(0xffffff, 2.4); sun.position.set(5, 9, 7); scene.add(sun);
   const fog = new THREE.Fog(0xe3edff, 45, 160);
-  const D = buildDrone(themed('--brand', '#0d5ef1')); scene.add(D.pose);
+  const D = buildDrone(themed('--drone', '#15171c'), undefined, themed('--wing', '#0d5ef1')); scene.add(D.pose);
   const W = buildWorld(themed('--trail', '#5b9dff')); W.group.visible = false; scene.add(W.group);
 
   const SCREEN_CAM = new THREE.Vector3(0, 2.2, 10), ORIGIN = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
@@ -138,7 +138,7 @@ function start() {
     // 2) replay world mode (pinned section)
     const p = clamp((s - rep.top) / (rep.h - vh), 0, 1), w = s < rep.top || s > rep.top + rep.h - vh ? 0 : smooth(0, 0.08, p) * (1 - smooth(0.92, 1, p));
     let camPos = SCREEN_CAM, camLook = ORIGIN, camUp = UP, dronePos = cur.pos, yaw = cur.yaw, roll = cur.roll, pitch = cur.pitch, scale = cur.scale, hideDrone = false, mode = -1;
-    W.group.visible = w > 0.001; scene.fog = w > 0.001 ? fog : null; skyReplay.style.opacity = w.toFixed(3);
+    W.group.visible = w > 0.001; scene.fog = w > 0.001 ? fog : null; skyReplay.style.opacity = w.toFixed(3); stage.style.setProperty('--w', w.toFixed(3));
     if (w > 0.001) {
       const u = clamp((p - 0.08) / 0.84, 0, 1), P = W.curve.getPointAt(u), F = W.curve.getTangentAt(u).setY(0).normalize();
       const F2 = W.curve.getTangentAt(Math.min(1, u + 0.02)).setY(0).normalize(), R = V().crossVectors(F, UP).normalize();

@@ -103,9 +103,9 @@ const bpts = []; for (let i = 0; i <= 96; i++) { const a = i / 96 * Math.PI * 2;
 const boundary = new THREE.Line(new THREE.BufferGeometry().setFromPoints(bpts), new THREE.LineDashedMaterial({ color: 0xe2e8f0, dashSize: 1.1, gapSize: 0.9, transparent: true, opacity: 0.7 }));
 boundary.computeLineDistances(); scene.add(boundary);
 
-// drones: the trainee (brand blue) and the instructor's demo drone (white)
+// drones: the trainee (black with blue wings) and the instructor's demo drone (white)
 const S = 1.7, GROUND = 0.27 * S;
-const trainee = buildDrone(0x0d5ef1), coach = buildDrone(0xe5e7eb, 0x1d4ed8);
+const trainee = buildDrone(0x15171c, 0x1e293b, 0x0d5ef1), coach = buildDrone(0xe5e7eb, 0x1d4ed8);
 for (const d of [trainee, coach]) { d.pose.scale.setScalar(S); d.pose.traverse(o => { if (o.isMesh) o.castShadow = true; }); scene.add(d.pose); }
 
 // ---------- choreography (seconds). The loop starts and ends on the pad facing away, so it repeats seamlessly. ----------
